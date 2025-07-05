@@ -48,8 +48,8 @@ export default function RejoindrePartie() {
           required
           style={{ marginLeft: "1rem" }}
         />
-        <button type="submit" style={{ marginLeft: "1rem" }}>
-          Rejoindre
+        <button type="submit" className="btn-rejoindre">
+                    Rejoindre
         </button>
       </form>
     </div>
