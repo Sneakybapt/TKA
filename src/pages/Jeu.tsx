@@ -21,6 +21,7 @@ export default function Jeu() {
   const [texteMission, setTexteMission] = useState("");
   const [notification, setNotification] = useState<NotificationData | null>(null);
 
+  // ✅ Restoration fiable au chargement
   useEffect(() => {
     const pseudo = localStorage.getItem("tka_pseudo");
     const code = localStorage.getItem("tka_code");
@@ -30,14 +31,13 @@ export default function Jeu() {
     if (pseudo && code && mission && cible) {
       setInfos({ pseudo, code, mission, cible });
       socket.emit("reconnexion", { pseudo, code });
+    } else {
+      navigate("/");
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
-    socket.on("demande_validation", ({ tueur, message }) => {
-      setNotification({ tueur, message });
-    });
-
+    // ✅ Si une nouvelle mission/cible est donnée ➜ on met à jour
     socket.on("partie_lancee", ({ pseudo, code, cible, mission }) => {
       localStorage.setItem("tka_pseudo", pseudo);
       localStorage.setItem("tka_code", code);
@@ -46,13 +46,17 @@ export default function Jeu() {
       setInfos({ pseudo, code, mission, cible });
     });
 
+    socket.on("demande_validation", ({ tueur, message }) => {
+      setNotification({ tueur, message });
+    });
+
     socket.on("victoire", () => {
       navigate("/victoire");
     });
 
     return () => {
-      socket.off("demande_validation");
       socket.off("partie_lancee");
+      socket.off("demande_validation");
       socket.off("victoire");
     };
   }, [navigate]);
@@ -91,13 +95,7 @@ export default function Jeu() {
   if (!infos) {
     return (
       <div style={{ padding: "2rem" }}>
-        <p>En attente de lancement...</p>
-        <button
-          onClick={() => navigate("/")}
-          style={{ marginTop: "1rem", padding: "0.5rem 1rem" }}
-        >
-          Retour à l’accueil
-        </button>
+        <p>🔄 Chargement des données…</p>
       </div>
     );
   }
