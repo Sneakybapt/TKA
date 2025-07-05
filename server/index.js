@@ -4,6 +4,8 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const staticPath = path.join(__dirname, "dist");
+
 
 const app = express();
 const server = http.createServer(app);
@@ -27,6 +29,7 @@ const io = new Server(server, {
 });
 
 app.use(cors());
+app.use(express.static(staticPath));
 app.get("/", (req, res) => {
   res.send("Serveur Socket.IO en ligne !");
 });
@@ -181,7 +184,7 @@ socket.on("validation_elimination", ({ code, cible, tueur }) => {
   });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`✅ Serveur en ligne sur http://localhost:${PORT}`);
 });
