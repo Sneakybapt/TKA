@@ -5,6 +5,7 @@ import RejoindrePartie from "./pages/RejoindrePartie";
 import SalleAttente from "./pages/SalleAttente";
 import Jeu from "./pages/Jeu";
 import Victoire from "./pages/Victoire";
+import { Navigate } from "react-router-dom";
 
 
 
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="/attente" element={<SalleAttente />} />
         <Route path="/jeu" element={<Jeu />} />
         <Route path="/victoire" element={<Victoire />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );
