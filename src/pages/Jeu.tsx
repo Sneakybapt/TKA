@@ -18,6 +18,7 @@ export default function Jeu() {
   const [modeValidation, setModeValidation] = useState(false);
   const [texteMission, setTexteMission] = useState("");
   const [notification, setNotification] = useState<NotificationData | null>(null);
+  const [infos, setInfos] = useState<{pseudo: string; code: string; mission: string; cible: string;} | null>(null);
 
 useEffect(() => {
   const pseudo = localStorage.getItem("tka_pseudo");
