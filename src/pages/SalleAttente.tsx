@@ -33,6 +33,13 @@ export default function SalleAttente() {
   useEffect(() => {
     // Quand la partie est lancée, on redirige vers la page /jeu avec les infos du joueur
     socket.on("partie_lancee", ({ pseudo, cible, mission, code }) => {
+      // ✅ Sauvegarde des infos
+      localStorage.setItem("tka_pseudo", pseudo);
+      localStorage.setItem("tka_code", code);
+      localStorage.setItem("tka_mission", mission);
+      localStorage.setItem("tka_cible", cible);
+
+      // ✅ Redirection vers la page du jeu
       navigate("/jeu", { state: { pseudo, cible, mission, code } });
     });
 

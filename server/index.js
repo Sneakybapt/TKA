@@ -70,6 +70,15 @@ io.on("connection", (socket) => {
       return;
     }
 
+    const tentative = eliminationsEnAttente[pseudo];
+    if (tentative) {
+      socket.emit("demande_validation", {
+        tueur: tentative.tueur,
+        message: tentative.message
+      });
+    }
+
+
     // 🔁 Mise à jour du nouvel ID
     joueur.id = socket.id;
     socket.join(code);

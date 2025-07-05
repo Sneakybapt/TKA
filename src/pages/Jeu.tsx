@@ -18,6 +18,21 @@ export default function Jeu() {
   const [modeValidation, setModeValidation] = useState(false);
   const [texteMission, setTexteMission] = useState("");
   const [notification, setNotification] = useState<NotificationData | null>(null);
+  const [infos, setInfos] = useState<{pseudo: string; code: string; mission: string; cible: string;} | null>(null);
+
+useEffect(() => {
+  const pseudo = localStorage.getItem("tka_pseudo");
+  const code = localStorage.getItem("tka_code");
+  const mission = localStorage.getItem("tka_mission");
+  const cible = localStorage.getItem("tka_cible");
+
+  if (pseudo && code && mission && cible) {
+    setInfos({ pseudo, code, mission, cible });
+
+    // 🔁 Demande au serveur de rejouer l’état si besoin
+    socket.emit("reconnexion", { pseudo, code });
+  }
+}, []);
 
   useEffect(() => {
     socket.on("demande_validation", ({ tueur, message }) => {
@@ -98,6 +113,16 @@ export default function Jeu() {
       <p>Bienvenue <strong>{pseudo}</strong> !</p>
       <p>Ta cible est : <strong>{cibleActuelle}</strong></p>
       <p>🎯 Ta mission : <em>{missionActuelle}</em></p>
+
+      {infos && (
+        <div>
+          <h2>Bienvenue {infos.pseudo}</h2>
+          <p>🎯 Ta cible : <strong>{infos.cible}</strong></p>
+          <p>🎭 Ta mission : <em>{infos.mission}</em></p>
+          <p>🔐 Code partie : {infos.code}</p>
+        </div>
+      )}
+
 
       {notification && (
         <div style={{ marginTop: "2rem", border: "2px dashed red", padding: "1rem", backgroundColor: "#ffe5e5" }}>
