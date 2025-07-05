@@ -70,6 +70,10 @@ io.on("connection", (socket) => {
       return;
     }
 
+    // 🔁 Mise à jour du nouvel ID
+    joueur.id = socket.id;
+    socket.join(code);
+
     const tentative = eliminationsEnAttente[pseudo];
     if (tentative) {
       socket.emit("demande_validation", {
@@ -78,10 +82,6 @@ io.on("connection", (socket) => {
       });
     }
 
-
-    // 🔁 Mise à jour du nouvel ID
-    joueur.id = socket.id;
-    socket.join(code);
 
     // ✅ Mise à jour du lobby
     io.to(code).emit("mise_a_jour_joueurs", joueurs);
@@ -118,10 +118,13 @@ io.on("connection", (socket) => {
   });
 
   socket.on("tentative_elimination", ({ code, tueur, cible, message }) => {
+    console.log("📤 Tentative reçue :", { code, tueur, cible });
+    
     const joueurs = parties[code];
     if (!joueurs) return;
 
     const cibleData = joueurs.find(j => j.pseudo === cible);
+    console.log("🎯 ID cible :", cibleData?.id);
     if (!cibleData) return;
 
     eliminationsEnAttente[cible] = { code, tueur, message };

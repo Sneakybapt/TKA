@@ -67,13 +67,15 @@ useEffect(() => {
       alert("Merci de décrire comment tu as accompli ta mission 😇");
       return;
     }
+    console.log("Tentative d'élimination envoyée", { code, tueur: pseudo, cible : cibleActuelle });
 
     socket.emit("tentative_elimination", {
       code,
       tueur: pseudo,
       cible: cibleActuelle,
       message: texteMission.trim(),
-    });
+    });   
+    
 
     setModeValidation(false);
     setTexteMission("");
@@ -109,19 +111,9 @@ useEffect(() => {
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h2>🎯 Objectif de la partie {code}</h2>
-      <p>Bienvenue <strong>{pseudo}</strong> !</p>
+      <h2>Bienvenue <strong>{pseudo}</strong> !</h2>
       <p>Ta cible est : <strong>{cibleActuelle}</strong></p>
       <p>🎯 Ta mission : <em>{missionActuelle}</em></p>
-
-      {infos && (
-        <div>
-          <h2>Bienvenue {infos.pseudo}</h2>
-          <p>🎯 Ta cible : <strong>{infos.cible}</strong></p>
-          <p>🎭 Ta mission : <em>{infos.mission}</em></p>
-          <p>🔐 Code partie : {infos.code}</p>
-        </div>
-      )}
 
 
       {notification && (
