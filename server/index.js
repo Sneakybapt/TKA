@@ -1,19 +1,10 @@
-const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 
-const staticPath = path.join(__dirname, "dist"); // ✅ Serve React frontend
 const missionsPath = path.join(__dirname, "missions.json");
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-app.use(cors());
-app.use(express.static(staticPath)); // ✅ Serves /dist files
 
 // 🧠 Chargement des missions
 let missions = [];
@@ -25,19 +16,21 @@ try {
   console.error("❌ Impossible de charger les missions :", err.message);
 }
 
-// ✅ Catch-all pour React Router
-app.get("*", (req, res) => {
-  res.sendFile(path.join(staticPath, "index.html"));
-});
-
 // 🧠 Mémoire des parties
 const parties = {};
 const eliminationsEnAttente = {};
 
+const server = http.createServer(); // ⛔️ Pas d'app Express ici
+const io = new Server(server, {
+  cors: {
+    origin: "*", // ✅ Permet les appels depuis le frontend
+    methods: ["GET", "POST"]
+  }
+});
+
 io.on("connection", (socket) => {
   console.log("🔌 Connexion :", socket.id);
 
-  // 👉 Créer partie
   socket.on("creer_partie", ({ pseudo }) => {
     const code = Math.random().toString(36).substring(2, 6).toUpperCase();
     parties[code] = [{ id: socket.id, pseudo }];
@@ -46,7 +39,6 @@ io.on("connection", (socket) => {
     console.log(`🎲 Partie ${code} créée par ${pseudo}`);
   });
 
-  // 👉 Rejoindre partie
   socket.on("rejoindre_partie", ({ code, pseudo }) => {
     if (parties[code]) {
       parties[code].push({ id: socket.id, pseudo });
@@ -58,7 +50,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 👉 Lancer partie
   socket.on("lancer_partie", (code) => {
     const joueurs = parties[code];
     if (!joueurs || joueurs.length < 2) {
@@ -94,7 +85,6 @@ io.on("connection", (socket) => {
     console.log(`🚀 Partie ${code} lancée avec ${joueurs.length} joueurs`);
   });
 
-  // 👉 Tentative d’élimination
   socket.on("tentative_elimination", ({ code, tueur, cible, message }) => {
     const joueurs = parties[code];
     if (!joueurs) return;
@@ -107,7 +97,6 @@ io.on("connection", (socket) => {
     console.log(`📤 Tentative envoyée à ${cible}`);
   });
 
-  // 👉 Validation d’élimination
   socket.on("validation_elimination", ({ code, cible, tueur }) => {
     const joueurs = parties[code];
     if (!joueurs) return;
@@ -143,7 +132,6 @@ io.on("connection", (socket) => {
     delete eliminationsEnAttente[cible];
   });
 
-  // 👉 Déconnexion
   socket.on("disconnect", () => {
     for (const code in parties) {
       parties[code] = parties[code].filter(j => j.id !== socket.id);
@@ -153,7 +141,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 3000; // ✅ Compatible Render
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`✅ Serveur en ligne sur http://localhost:${PORT}`);
+  console.log(`✅ Serveur Socket.IO en ligne sur http://localhost:${PORT}`);
 });
