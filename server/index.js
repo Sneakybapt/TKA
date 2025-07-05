@@ -57,6 +57,29 @@ io.on("connection", (socket) => {
       return;
     }
 
+  socket.on("reconnexion", ({ code, pseudo }) => {
+    const joueurs = parties[code];
+    if (!joueurs) {
+      socket.emit("erreur", "Partie introuvable.");
+      return;
+    }
+
+    const joueur = joueurs.find(j => j.pseudo === pseudo);
+    if (!joueur) {
+      socket.emit("erreur", "Pseudo non reconnu.");
+      return;
+    }
+
+    // 🔁 Mise à jour du nouvel ID
+    joueur.id = socket.id;
+    socket.join(code);
+
+    // ✅ Mise à jour du lobby
+    io.to(code).emit("mise_a_jour_joueurs", joueurs);
+    socket.emit("reconnexion_ok", { code, joueurs });
+    console.log(`🔄 ${pseudo} reconnecté à la partie ${code}`);
+  });
+
     const joueursMelanges = [...joueurs].sort(() => 0.5 - Math.random());
     const shuffledMissions = [...missions].sort(() => 0.5 - Math.random());
 
@@ -139,30 +162,6 @@ io.on("connection", (socket) => {
     }
     console.log("🔌 Déconnecté :", socket.id);
   });
-});
-
-
-socket.on("reconnexion", ({ code, pseudo }) => {
-  const joueurs = parties[code];
-  if (!joueurs) {
-    socket.emit("erreur", "Partie introuvable.");
-    return;
-  }
-
-  const joueur = joueurs.find(j => j.pseudo === pseudo);
-  if (!joueur) {
-    socket.emit("erreur", "Pseudo non reconnu.");
-    return;
-  }
-
-  // 🔁 Mise à jour du nouvel ID
-  joueur.id = socket.id;
-  socket.join(code);
-
-  // ✅ Mise à jour du lobby
-  io.to(code).emit("mise_a_jour_joueurs", joueurs);
-  socket.emit("reconnexion_ok", { code, joueurs });
-  console.log(`🔄 ${pseudo} reconnecté à la partie ${code}`);
 });
 
 
