@@ -1,83 +1,74 @@
-import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import socket from "../socket";
+
+interface InfosJoueur {
+  pseudo: string;
+  code: string;
+  cible: string;
+  mission: string;
+}
 
 interface NotificationData {
   tueur: string;
   message: string;
 }
 
-
 export default function Jeu() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { pseudo, code } = location.state || {};
-
-  const [cibleActuelle, setCibleActuelle] = useState(location.state?.cible || "");
-  const [missionActuelle, setMissionActuelle] = useState(location.state?.mission || "");
+  const [infos, setInfos] = useState<InfosJoueur | null>(null);
   const [modeValidation, setModeValidation] = useState(false);
   const [texteMission, setTexteMission] = useState("");
   const [notification, setNotification] = useState<NotificationData | null>(null);
-  const [infos, setInfos] = useState<{pseudo: string; code: string; mission: string; cible: string;} | null>(null);
 
-useEffect(() => {
-  const pseudo = localStorage.getItem("tka_pseudo");
-  const code = localStorage.getItem("tka_code");
-  const mission = localStorage.getItem("tka_mission");
-  const cible = localStorage.getItem("tka_cible");
+  useEffect(() => {
+    const pseudo = localStorage.getItem("tka_pseudo");
+    const code = localStorage.getItem("tka_code");
+    const mission = localStorage.getItem("tka_mission");
+    const cible = localStorage.getItem("tka_cible");
 
-  if (pseudo && code && mission && cible) {
-    setInfos({ pseudo, code, mission, cible });
-
-    // 🔁 Demande au serveur de rejouer l’état si besoin
-    socket.emit("reconnexion", { pseudo, code });
-  }
-}, []);
+    if (pseudo && code && mission && cible) {
+      setInfos({ pseudo, code, mission, cible });
+      socket.emit("reconnexion", { pseudo, code });
+    }
+  }, []);
 
   useEffect(() => {
     socket.on("demande_validation", ({ tueur, message }) => {
-      console.log("✅ Événement reçu : demande_validation");
       setNotification({ tueur, message });
     });
 
-    socket.on("partie_lancee", ({ pseudo: newPseudo, cible: newCible, mission: newMission }) => {
-    console.log("🛬 Mise à jour reçue !");
-    console.log("👉 Nouveau pseudo :", newPseudo);
-    console.log("👉 Nouvelle cible :", newCible);
-    console.log("👉 Nouvelle mission :", newMission);
-    console.log("Infos joueur :", infos);
-
-      setCibleActuelle(newCible);
-      setMissionActuelle(newMission);
+    socket.on("partie_lancee", ({ pseudo, code, cible, mission }) => {
+      localStorage.setItem("tka_pseudo", pseudo);
+      localStorage.setItem("tka_code", code);
+      localStorage.setItem("tka_mission", mission);
+      localStorage.setItem("tka_cible", cible);
+      setInfos({ pseudo, code, mission, cible });
     });
 
     socket.on("victoire", () => {
-      console.log("🏆 Victoire reçue !");
       navigate("/victoire");
-});
-
+    });
 
     return () => {
       socket.off("demande_validation");
       socket.off("partie_lancee");
       socket.off("victoire");
     };
-  }, [pseudo, code, navigate]);
+  }, [navigate]);
 
   const handleEnvoyerMission = () => {
-    if (texteMission.trim() === "") {
+    if (!infos || texteMission.trim() === "") {
       alert("Merci de décrire comment tu as accompli ta mission 😇");
       return;
     }
-    console.log("Tentative d'élimination envoyée", { code, tueur: pseudo, cible : cibleActuelle });
 
     socket.emit("tentative_elimination", {
-      code,
-      tueur: pseudo,
-      cible: cibleActuelle,
+      code: infos.code,
+      tueur: infos.pseudo,
+      cible: infos.cible,
       message: texteMission.trim(),
-    });   
-    
+    });
 
     setModeValidation(false);
     setTexteMission("");
@@ -85,11 +76,11 @@ useEffect(() => {
   };
 
   const handleValidationElimination = () => {
-    if (!notification) return;
+    if (!notification || !infos) return;
 
     socket.emit("validation_elimination", {
-      code,
-      cible: pseudo,
+      code: infos.code,
+      cible: infos.pseudo,
       tueur: notification.tueur,
     });
 
@@ -97,7 +88,7 @@ useEffect(() => {
     navigate("/");
   };
 
-  if (!pseudo || !cibleActuelle || !code) {
+  if (!infos) {
     return (
       <div style={{ padding: "2rem" }}>
         <p>En attente de lancement...</p>
@@ -105,7 +96,7 @@ useEffect(() => {
           onClick={() => navigate("/")}
           style={{ marginTop: "1rem", padding: "0.5rem 1rem" }}
         >
-          Retour à l'accueil
+          Retour à l’accueil
         </button>
       </div>
     );
@@ -113,10 +104,9 @@ useEffect(() => {
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h2>Bienvenue <strong>{pseudo}</strong> !</h2>
-      <p>Ta cible est : <strong>{cibleActuelle}</strong></p>
-      <p>🎯 Ta mission : <em>{missionActuelle}</em></p>
-
+      <h2>Bienvenue <strong>{infos.pseudo}</strong> !</h2>
+      <p>🎯 Ta cible : <strong>{infos.cible}</strong></p>
+      <p>🎭 Ta mission : <em>{infos.mission}</em></p>
 
       {notification && (
         <div style={{ marginTop: "2rem", border: "2px dashed red", padding: "1rem", backgroundColor: "#ffe5e5" }}>

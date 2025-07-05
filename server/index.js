@@ -43,6 +43,11 @@ io.on("connection", (socket) => {
     if (parties[code]) {
       parties[code].push({ id: socket.id, pseudo });
       socket.join(code);
+
+      // ✅ Envoie une confirmation directe au joueur
+      socket.emit("confirmation_rejoindre", { code, pseudo });
+      socket.emit("mise_a_jour_joueurs", parties[code]); // 🆕 Envoi immédiat au joueur
+      // ✅ Mise à jour pour tous les joueurs
       io.to(code).emit("mise_a_jour_joueurs", parties[code]);
       console.log(`➡️ ${pseudo} a rejoint la partie ${code}`);
     } else {
@@ -70,7 +75,6 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // 🔁 Mise à jour du nouvel ID
     joueur.id = socket.id;
     socket.join(code);
 
@@ -78,16 +82,17 @@ io.on("connection", (socket) => {
     if (tentative) {
       socket.emit("demande_validation", {
         tueur: tentative.tueur,
-        message: tentative.message
+        message: tentative.message,
       });
     }
 
-
-    // ✅ Mise à jour du lobby
-    io.to(code).emit("mise_a_jour_joueurs", joueurs);
     socket.emit("reconnexion_ok", { code, joueurs });
+    io.to(code).emit("mise_a_jour_joueurs", joueurs);
     console.log(`🔄 ${pseudo} reconnecté à la partie ${code}`);
   });
+
+
+
 
     const joueursMelanges = [...joueurs].sort(() => 0.5 - Math.random());
     const shuffledMissions = [...missions].sort(() => 0.5 - Math.random());

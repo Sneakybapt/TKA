@@ -12,10 +12,17 @@ export default function SalleAttente() {
   const navigate = useNavigate();
   const { code, pseudo, joueurs: joueursInitiaux, estCreateur } = location.state || {};
   const [joueurs, setJoueurs] = useState<Joueur[]>(joueursInitiaux || []);
+  const [readyToLaunch, setReadyToLaunch] = useState(false);
+
+  // 🚨 Garde-fou si on accède à /attente sans passer par rejoindre
+  if (!code || !pseudo) {
+    navigate("/rejoindre");
+    return null;
+  }
 
   useEffect(() => {
-    if (!code || !pseudo) return;
 
+    setReadyToLaunch(true); // 🧠 On attend que les listeners soient prêts
     socket.on("partie_creee", ({ joueurs }) => {
       setJoueurs(joueurs);
     });
@@ -24,23 +31,17 @@ export default function SalleAttente() {
       setJoueurs(data);
     });
 
-    return () => {
-      socket.off("partie_creee");
-      socket.off("mise_a_jour_joueurs");
-    };
-  }, [code, pseudo]);
-
-  useEffect(() => {
-    // Quand la partie est lancée, on redirige vers la page /jeu avec les infos du joueur
     socket.on("partie_lancee", ({ pseudo, cible, mission, code }) => {
-      // ✅ Sauvegarde des infos
+      // ✅ Sauvegarde pour reprise après refresh
       localStorage.setItem("tka_pseudo", pseudo);
       localStorage.setItem("tka_code", code);
       localStorage.setItem("tka_mission", mission);
       localStorage.setItem("tka_cible", cible);
 
-      // ✅ Redirection vers la page du jeu
-      navigate("/jeu", { state: { pseudo, cible, mission, code } });
+      // ⏱ Petit délai pour garantir l’écriture
+      setTimeout(() => {
+        navigate("/jeu");
+      }, 50);
     });
 
     socket.on("erreur", (message) => {
@@ -48,10 +49,12 @@ export default function SalleAttente() {
     });
 
     return () => {
+      socket.off("partie_creee");
+      socket.off("mise_a_jour_joueurs");
       socket.off("partie_lancee");
       socket.off("erreur");
     };
-  }, [navigate]);
+  }, [code, pseudo, navigate]);
 
   return (
     <div style={{ padding: "2rem" }}>
@@ -67,11 +70,19 @@ export default function SalleAttente() {
 
       {estCreateur && (
         <button
-          style={{ marginTop: "2rem", padding: "0.75rem 1.5rem", fontSize: "1rem" }}
+          disabled={!readyToLaunch}
           onClick={() => socket.emit("lancer_partie", code)}
+          style={{
+            marginTop: "2rem",
+            padding: "0.75rem 1.5rem",
+            fontSize: "1rem",
+            opacity: readyToLaunch ? 1 : 0.5,
+            cursor: readyToLaunch ? "pointer" : "not-allowed",
+          }}
         >
           Lancer la partie
         </button>
+
       )}
     </div>
   );

@@ -18,10 +18,13 @@ export default function RejoindrePartie() {
     // Sauvegarde dans le navigateur
     localStorage.setItem("tka_pseudo", pseudo);
     localStorage.setItem("tka_code", code.toUpperCase());
-
-    socket.once("mise_a_jour_joueurs", (joueurs) => {
-      navigate("/attente", { state: { code, pseudo, joueurs } });
+    
+    socket.once("confirmation_rejoindre", ({ code, pseudo }) => {
+      socket.once("mise_a_jour_joueurs", (joueurs) => {
+        navigate("/attente", { state: { code, pseudo, joueurs } });
+  });
     });
+
 
     socket.once("erreur", (message) => {
       alert(message);
