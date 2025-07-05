@@ -45,6 +45,8 @@ useEffect(() => {
     console.log("👉 Nouveau pseudo :", newPseudo);
     console.log("👉 Nouvelle cible :", newCible);
     console.log("👉 Nouvelle mission :", newMission);
+    console.log("Infos joueur :", infos);
+
       setCibleActuelle(newCible);
       setMissionActuelle(newMission);
     });
