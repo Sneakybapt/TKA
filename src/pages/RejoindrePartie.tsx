@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import socket from "../socket";
 import { useNavigate } from "react-router-dom";
 
@@ -15,30 +15,53 @@ export default function RejoindrePartie() {
       return;
     }
 
-    // Écoute une seule fois la réponse de confirmation
+    // Sauvegarde dans le navigateur
+    localStorage.setItem("tka_pseudo", pseudo);
+    localStorage.setItem("tka_code", code.toUpperCase());
+
     socket.once("mise_a_jour_joueurs", (joueurs) => {
       navigate("/attente", { state: { code, pseudo, joueurs } });
     });
 
-    // Écoute une seule fois une erreur potentielle
     socket.once("erreur", (message) => {
       alert(message);
     });
 
-    // Envoie l’événement de tentative de connexion
     socket.emit("rejoindre_partie", { code: code.toUpperCase(), pseudo });
   };
 
+  // 🔁 Tentative automatique de reconnexion
+  useEffect(() => {
+    const savedPseudo = localStorage.getItem("tka_pseudo");
+    const savedCode = localStorage.getItem("tka_code");
+
+    if (savedPseudo && savedCode) {
+      socket.emit("reconnexion", {
+        pseudo: savedPseudo,
+        code: savedCode
+      });
+
+      socket.once("reconnexion_ok", ({ joueurs }) => {
+        navigate("/attente", { state: { code: savedCode, pseudo: savedPseudo, joueurs } });
+      });
+
+      socket.once("erreur", (message) => {
+        console.warn("⚠️ Reconnexion échouée :", message);
+      });
+    }
+  }, []);
+
   return (
-    <div style={{ padding: "2rem" }}>
+    <div className="container">
       <h2>Rejoindre une partie</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="form">
         <input
           type="text"
           placeholder="Votre pseudo"
           value={pseudo}
           onChange={(e) => setPseudo(e.target.value)}
           required
+          className="input"
         />
         <input
           type="text"
@@ -46,10 +69,10 @@ export default function RejoindrePartie() {
           value={code}
           onChange={(e) => setCode(e.target.value)}
           required
-          style={{ marginLeft: "1rem" }}
+          className="input"
         />
         <button type="submit" className="btn-rejoindre">
-                    Rejoindre
+          Rejoindre
         </button>
       </form>
     </div>

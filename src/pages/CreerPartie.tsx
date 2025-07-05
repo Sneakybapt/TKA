@@ -15,6 +15,8 @@ export default function CreerPartie() {
     // Attente de la réponse du serveur
     socket.once("partie_creee", ({ code, joueurs }) => {
       console.log("Partie créée avec code :", code);
+      localStorage.setItem("tka_pseudo", pseudo);
+      localStorage.setItem("tka_code", code.toUpperCase());
       navigate("/attente", { state: { code, pseudo, joueurs, estCreateur: true, } });
     });
   };

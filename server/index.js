@@ -141,6 +141,31 @@ io.on("connection", (socket) => {
   });
 });
 
+
+socket.on("reconnexion", ({ code, pseudo }) => {
+  const joueurs = parties[code];
+  if (!joueurs) {
+    socket.emit("erreur", "Partie introuvable.");
+    return;
+  }
+
+  const joueur = joueurs.find(j => j.pseudo === pseudo);
+  if (!joueur) {
+    socket.emit("erreur", "Pseudo non reconnu.");
+    return;
+  }
+
+  // 🔁 Mise à jour du nouvel ID
+  joueur.id = socket.id;
+  socket.join(code);
+
+  // ✅ Mise à jour du lobby
+  io.to(code).emit("mise_a_jour_joueurs", joueurs);
+  socket.emit("reconnexion_ok", { code, joueurs });
+  console.log(`🔄 ${pseudo} reconnecté à la partie ${code}`);
+});
+
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`✅ Serveur Socket.IO en ligne sur http://localhost:${PORT}`);
