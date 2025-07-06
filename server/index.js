@@ -125,14 +125,15 @@ io.on("connection", (socket) => {
     });
 
 
-    donneesJoueurs.forEach((j) => {
+    parties[code].forEach((j) => {
       io.to(j.id).emit("partie_lancee", {
         pseudo: j.pseudo,
         cible: j.cible,
         mission: j.mission,
         code,
       });
-    });
+});
+
 
     console.log(`🚀 Partie ${code} lancée avec ${joueurs.length} joueurs`);
   });
