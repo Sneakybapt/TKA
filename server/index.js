@@ -55,13 +55,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("lancer_partie", (code) => {
-    const joueurs = parties[code];
-    if (!joueurs || joueurs.length < 2) {
-      io.to(code).emit("erreur", "Il faut au moins 2 joueurs.");
-      return;
-    }
-
   socket.on("reconnexion", ({ code, pseudo }) => {
     const joueurs = parties[code];
     if (!joueurs) {
@@ -100,6 +93,13 @@ io.on("connection", (socket) => {
     io.to(code).emit("mise_a_jour_joueurs", joueurs);
     console.log(`🔄 ${pseudo} reconnecté à la partie ${code}`);
   });
+
+  socket.on("lancer_partie", (code) => {
+    const joueurs = parties[code];
+    if (!joueurs || joueurs.length < 2) {
+      io.to(code).emit("erreur", "Il faut au moins 2 joueurs.");
+      return;
+    }
 
 
 
