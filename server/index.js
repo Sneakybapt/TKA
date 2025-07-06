@@ -95,49 +95,54 @@ io.on("connection", (socket) => {
     console.log(`🔄 ${pseudo} reconnecté à la partie ${code}`);
   });
 
-  socket.on("lancer_partie", (code) => {
-    const joueurs = parties[code];
-    if (!joueurs || joueurs.length < 2) {
-      io.to(code).emit("erreur", "Il faut au moins 2 joueurs.");
-      return;
-    }
+    socket.on("lancer_partie", (code) => {
+      const joueurs = parties[code];
+      if (!joueurs || joueurs.length < 2) {
+        io.to(code).emit("erreur", "Il faut au moins 2 joueurs.");
+        return;
+      }
 
-    const joueursMelanges = [...joueurs].sort(() => 0.5 - Math.random());
-    const shuffledMissions = [...missions].sort(() => 0.5 - Math.random());
+      const joueursMelanges = [...joueurs].sort(() => 0.5 - Math.random());
+      const shuffledMissions = [...missions].sort(() => 0.5 - Math.random());
 
-    const donneesJoueurs = joueursMelanges.map((joueur, index) => {
-      const cible = joueursMelanges[(index + 1) % joueursMelanges.length];
-      const mission = shuffledMissions[index % shuffledMissions.length] || "Mission secrète.";
-      return {
-        id: joueur.id,
-        pseudo: joueur.pseudo,
-        cible: cible.pseudo,
-        mission,
-      };
-    });
-
-    parties[code] = joueurs.map(joueurOrig => {
-      const extension = donneesJoueurs.find(j => j.pseudo === joueurOrig.pseudo);
-      return {
-        ...joueurOrig,
-        mission: extension?.mission || "Mission secrète.",
-        cible: extension?.cible || "Cible inconnue"
-      };
-    });
-
-
-    parties[code].forEach((j) => {
-      io.to(j.id).emit("partie_lancee", {
-        pseudo: j.pseudo,
-        cible: j.cible,
-        mission: j.mission,
-        code,
+      const donneesJoueurs = joueursMelanges.map((joueur, index) => {
+        const cible = joueursMelanges[(index + 1) % joueursMelanges.length];
+        const mission = shuffledMissions[index % shuffledMissions.length] || "Mission secrète.";
+        return {
+          id: joueur.id,
+          pseudo: joueur.pseudo,
+          cible: cible.pseudo,
+          mission,
+        };
       });
-});
 
+      // 🔍 Vérification des pseudos
+      console.log("✅ Pseudos originaux :", joueurs.map(j => j.pseudo));
+      console.log("🔄 Pseudos attribués :", donneesJoueurs.map(j => j.pseudo));
 
-    console.log(`🚀 Partie ${code} lancée avec ${joueurs.length} joueurs`);
-  });
+      // 🛠 Fusion : ajoute mission & cible sans perdre les joueurs originaux
+      parties[code] = joueurs.map(joueurOrig => {
+        const extension = donneesJoueurs.find(j => j.pseudo === joueurOrig.pseudo) || {};
+        return {
+          ...joueurOrig,
+          mission: extension.mission || "Mission manquante",
+          cible: extension.cible || "Cible inconnue"
+        };
+      });
+
+      // ✅ Envoie les données réellement fusionnées aux joueurs
+      parties[code].forEach((j) => {
+        io.to(j.id).emit("partie_lancee", {
+          pseudo: j.pseudo,
+          cible: j.cible,
+          mission: j.mission,
+          code,
+        });
+      });
+
+      console.log(`🚀 Partie ${code} lancée avec ${joueurs.length} joueurs`);
+    });
+
 
   socket.on("tentative_elimination", ({ code, tueur, cible, message }) => {
     console.log("📤 Tentative reçue :", { code, tueur, cible });
