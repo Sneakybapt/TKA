@@ -78,6 +78,16 @@ io.on("connection", (socket) => {
     joueur.id = socket.id;
     socket.join(code);
 
+    if (joueur.mission && joueur.cible) {
+      socket.emit("partie_lancee", {
+        pseudo: joueur.pseudo,
+        code,
+        cible: joueur.cible,
+        mission: joueur.mission,
+      });
+    }
+
+
     const tentative = eliminationsEnAttente[pseudo];
     if (tentative) {
       socket.emit("demande_validation", {

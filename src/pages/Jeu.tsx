@@ -21,45 +21,45 @@ export default function Jeu() {
   const [texteMission, setTexteMission] = useState("");
   const [notification, setNotification] = useState<NotificationData | null>(null);
 
-  // ✅ Restoration fiable au chargement
-  useEffect(() => {
-    const pseudo = localStorage.getItem("tka_pseudo");
-    const code = localStorage.getItem("tka_code");
-    const mission = localStorage.getItem("tka_mission");
-    const cible = localStorage.getItem("tka_cible");
+useEffect(() => {
+  // 🧠 D'abord, écouter les sockets
+  socket.on("partie_lancee", ({ pseudo, code, cible, mission }) => {
+    localStorage.setItem("tka_pseudo", pseudo);
+    localStorage.setItem("tka_code", code);
+    localStorage.setItem("tka_mission", mission);
+    localStorage.setItem("tka_cible", cible);
+    setInfos({ pseudo, code, mission, cible });
+  });
 
-    if (pseudo && code && mission && cible) {
-      setInfos({ pseudo, code, mission, cible });
-      socket.emit("reconnexion", { pseudo, code });
-    } else {
-      navigate("/");
-    }
-  }, [navigate]);
+  socket.on("demande_validation", ({ tueur, message }) => {
+    setNotification({ tueur, message });
+  });
 
-  useEffect(() => {
-    // ✅ Si une nouvelle mission/cible est donnée ➜ on met à jour
-    socket.on("partie_lancee", ({ pseudo, code, cible, mission }) => {
-      localStorage.setItem("tka_pseudo", pseudo);
-      localStorage.setItem("tka_code", code);
-      localStorage.setItem("tka_mission", mission);
-      localStorage.setItem("tka_cible", cible);
-      setInfos({ pseudo, code, mission, cible });
-    });
+  socket.on("victoire", () => {
+    navigate("/victoire");
+  });
 
-    socket.on("demande_validation", ({ tueur, message }) => {
-      setNotification({ tueur, message });
-    });
+  // 🔁 Ensuite, récupérer les infos et émettre "reconnexion"
+  const pseudo = localStorage.getItem("tka_pseudo");
+  const code = localStorage.getItem("tka_code");
+  const mission = localStorage.getItem("tka_mission");
+  const cible = localStorage.getItem("tka_cible");
 
-    socket.on("victoire", () => {
-      navigate("/victoire");
-    });
+  if (pseudo && code && mission && cible) {
+    setInfos({ pseudo, code, mission, cible });
+    socket.emit("reconnexion", { pseudo, code });
+  } else {
+    navigate("/");
+  }
 
-    return () => {
-      socket.off("partie_lancee");
-      socket.off("demande_validation");
-      socket.off("victoire");
-    };
-  }, [navigate]);
+  // 🧹 Cleanup
+  return () => {
+    socket.off("partie_lancee");
+    socket.off("demande_validation");
+    socket.off("victoire");
+  };
+}, [navigate]);
+
 
   const handleEnvoyerMission = () => {
     if (!infos || texteMission.trim() === "") {
