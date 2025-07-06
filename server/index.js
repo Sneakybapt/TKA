@@ -101,9 +101,6 @@ io.on("connection", (socket) => {
       return;
     }
 
-
-
-
     const joueursMelanges = [...joueurs].sort(() => 0.5 - Math.random());
     const shuffledMissions = [...missions].sort(() => 0.5 - Math.random());
 
@@ -118,7 +115,15 @@ io.on("connection", (socket) => {
       };
     });
 
-    parties[code] = donneesJoueurs;
+    parties[code] = joueurs.map(joueurOrig => {
+      const extension = donneesJoueurs.find(j => j.pseudo === joueurOrig.pseudo);
+      return {
+        ...joueurOrig,
+        mission: extension?.mission || "Mission secrète.",
+        cible: extension?.cible || "Cible inconnue"
+      };
+    });
+
 
     donneesJoueurs.forEach((j) => {
       io.to(j.id).emit("partie_lancee", {
