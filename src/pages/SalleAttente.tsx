@@ -31,6 +31,16 @@ export default function SalleAttente() {
   }, [code, pseudo, navigate]);
 
   useEffect(() => {
+    const pseudoLS = localStorage.getItem("tka_pseudo");
+    const codeLS = localStorage.getItem("tka_code");
+
+    if (pseudoLS && codeLS) {
+      socket.emit("reconnexion", { pseudo: pseudoLS, code: codeLS });
+    }
+}, []);
+
+
+  useEffect(() => {
     // 🧠 Rendre le bouton "Lancer" actif après le montage
     setReadyToLaunch(true);
 
