@@ -17,49 +17,50 @@ interface NotificationData {
 export default function Jeu() {
   const navigate = useNavigate();
   const [infos, setInfos] = useState<InfosJoueur | null>(null);
+  const [enChargement, setEnChargement] = useState(true);
   const [modeValidation, setModeValidation] = useState(false);
   const [texteMission, setTexteMission] = useState("");
   const [notification, setNotification] = useState<NotificationData | null>(null);
 
-useEffect(() => {
-  // 🧠 D'abord, écouter les sockets
-  socket.on("partie_lancee", ({ pseudo, code, cible, mission }) => {
-    localStorage.setItem("tka_pseudo", pseudo);
-    localStorage.setItem("tka_code", code);
-    localStorage.setItem("tka_mission", mission);
-    localStorage.setItem("tka_cible", cible);
-    setInfos({ pseudo, code, mission, cible });
-  });
+  useEffect(() => {
+    const pseudo = localStorage.getItem("tka_pseudo");
+    const code = localStorage.getItem("tka_code");
 
-  socket.on("demande_validation", ({ tueur, message }) => {
-    setNotification({ tueur, message });
-  });
+    if (pseudo && code) {
+      socket.emit("reconnexion", { pseudo, code });
+    } else {
+      setEnChargement(false);
+    }
 
-  socket.on("victoire", () => {
-    navigate("/victoire");
-  });
+    socket.on("partie_lancee", ({ pseudo, code, cible, mission }) => {
+      localStorage.setItem("tka_pseudo", pseudo);
+      localStorage.setItem("tka_code", code);
+      localStorage.setItem("tka_mission", mission);
+      localStorage.setItem("tka_cible", cible);
+      setInfos({ pseudo, code, mission, cible });
+      setEnChargement(false);
+    });
 
-  // 🔁 Ensuite, récupérer les infos et émettre "reconnexion"
-  const pseudo = localStorage.getItem("tka_pseudo");
-  const code = localStorage.getItem("tka_code");
-  const mission = localStorage.getItem("tka_mission");
-  const cible = localStorage.getItem("tka_cible");
+    socket.on("demande_validation", ({ tueur, message }) => {
+      setNotification({ tueur, message });
+    });
 
-  if (pseudo && code && mission && cible) {
-    setInfos({ pseudo, code, mission, cible });
-    socket.emit("reconnexion", { pseudo, code });
-  } else {
-    navigate("/");
-  }
+    socket.on("victoire", () => {
+      navigate("/victoire");
+    });
 
-  // 🧹 Cleanup
-  return () => {
-    socket.off("partie_lancee");
-    socket.off("demande_validation");
-    socket.off("victoire");
-  };
-}, [navigate]);
+    socket.on("erreur", (msg) => {
+      console.warn("Erreur reçue :", msg);
+      setEnChargement(false);
+    });
 
+    return () => {
+      socket.off("partie_lancee");
+      socket.off("demande_validation");
+      socket.off("victoire");
+      socket.off("erreur");
+    };
+  }, [navigate]);
 
   const handleEnvoyerMission = () => {
     if (!infos || texteMission.trim() === "") {
@@ -92,12 +93,17 @@ useEffect(() => {
     navigate("/");
   };
 
-  if (!infos) {
+  if (enChargement) {
     return (
       <div style={{ padding: "2rem" }}>
-        <p>🔄 Chargement des données…</p>
+        <p>🔄 Restauration de ta mission en cours…</p>
       </div>
     );
+  }
+
+  if (!infos) {
+    navigate("/");
+    return null;
   }
 
   return (
