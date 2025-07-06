@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import socket from "../socket";
 import { useNavigate } from "react-router-dom";
 
@@ -40,32 +40,7 @@ export default function RejoindrePartie() {
     });
   };
 
-  // 🔁 Tentative automatique de reconnexion
-  useEffect(() => {
-    const savedPseudo = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
-    const savedCode = localStorage.getItem("tka_code")?.trim().toUpperCase();
 
-    if (savedPseudo && savedCode) {
-      socket.emit("reconnexion", {
-        pseudo: savedPseudo,
-        code: savedCode,
-      });
-
-      socket.once("reconnexion_ok", ({ joueurs }) => {
-        navigate("/attente", {
-          state: {
-            code: savedCode,
-            pseudo: savedPseudo,
-            joueurs,
-          },
-        });
-      });
-
-      socket.once("erreur", (message) => {
-        console.warn("⚠️ Reconnexion échouée :", message);
-      });
-    }
-  }, []);
 
   return (
     <div className="container">
