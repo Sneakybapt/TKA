@@ -9,15 +9,26 @@ export default function CreerPartie() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 💡 Nettoyage du pseudo
+    const pseudoNettoye = pseudo.trim().toLowerCase();
+
     // Émission de l'événement vers le serveur
-    socket.emit("creer_partie", { pseudo });
+    socket.emit("creer_partie", { pseudo: pseudoNettoye });
 
     // Attente de la réponse du serveur
     socket.once("partie_creee", ({ code, joueurs }) => {
       console.log("Partie créée avec code :", code);
-      localStorage.setItem("tka_pseudo", pseudo);
+      localStorage.setItem("tka_pseudo", pseudoNettoye);
       localStorage.setItem("tka_code", code.toUpperCase());
-      navigate("/attente", { state: { code, pseudo, joueurs, estCreateur: true, } });
+
+      navigate("/attente", {
+        state: {
+          code,
+          pseudo: pseudoNettoye,
+          joueurs,
+          estCreateur: true,
+        },
+      });
     });
   };
 

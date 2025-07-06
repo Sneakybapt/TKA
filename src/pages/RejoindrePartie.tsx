@@ -15,37 +15,50 @@ export default function RejoindrePartie() {
       return;
     }
 
+    // 🧼 Nettoyage du pseudo
+    const pseudoNettoye = pseudo.trim().toLowerCase();
+    const codeFormate = code.trim().toUpperCase();
+
     // Sauvegarde dans le navigateur
-    localStorage.setItem("tka_pseudo", pseudo);
-    localStorage.setItem("tka_code", code.toUpperCase());
-    
-    socket.once("confirmation_rejoindre", ({ code, pseudo }) => {
+    localStorage.setItem("tka_pseudo", pseudoNettoye);
+    localStorage.setItem("tka_code", codeFormate);
+
+    socket.once("confirmation_rejoindre", () => {
       socket.once("mise_a_jour_joueurs", (joueurs) => {
-        navigate("/attente", { state: { code, pseudo, joueurs } });
-  });
-    });
+        navigate("/attente", { state: { code: codeFormate, pseudo: pseudoNettoye, joueurs } });
+      });
+});
 
 
     socket.once("erreur", (message) => {
       alert(message);
     });
 
-    socket.emit("rejoindre_partie", { code: code.toUpperCase(), pseudo });
+    socket.emit("rejoindre_partie", {
+      code: codeFormate,
+      pseudo: pseudoNettoye,
+    });
   };
 
   // 🔁 Tentative automatique de reconnexion
   useEffect(() => {
-    const savedPseudo = localStorage.getItem("tka_pseudo");
-    const savedCode = localStorage.getItem("tka_code");
+    const savedPseudo = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
+    const savedCode = localStorage.getItem("tka_code")?.trim().toUpperCase();
 
     if (savedPseudo && savedCode) {
       socket.emit("reconnexion", {
         pseudo: savedPseudo,
-        code: savedCode
+        code: savedCode,
       });
 
       socket.once("reconnexion_ok", ({ joueurs }) => {
-        navigate("/attente", { state: { code: savedCode, pseudo: savedPseudo, joueurs } });
+        navigate("/attente", {
+          state: {
+            code: savedCode,
+            pseudo: savedPseudo,
+            joueurs,
+          },
+        });
       });
 
       socket.once("erreur", (message) => {

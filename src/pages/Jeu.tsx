@@ -23,7 +23,8 @@ export default function Jeu() {
   const [notification, setNotification] = useState<NotificationData | null>(null);
 
   useEffect(() => {
-    const pseudo = localStorage.getItem("tka_pseudo");
+    // 🔧 Normalisation du pseudo au moment de la reconnexion
+    const pseudo = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
     const code = localStorage.getItem("tka_code");
 
     if (pseudo && code) {
@@ -33,7 +34,7 @@ export default function Jeu() {
     }
 
     socket.on("partie_lancee", ({ pseudo, code, cible, mission }) => {
-      localStorage.setItem("tka_pseudo", pseudo);
+      localStorage.setItem("tka_pseudo", pseudo.trim().toLowerCase());
       localStorage.setItem("tka_code", code);
       localStorage.setItem("tka_mission", mission);
       localStorage.setItem("tka_cible", cible);

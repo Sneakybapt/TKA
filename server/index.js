@@ -62,7 +62,8 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const joueur = joueurs.find(j => j.pseudo === pseudo);
+    const joueur = joueurs.find(j => j.pseudo.trim().toLowerCase() === pseudo.trim().toLowerCase());
+
     if (!joueur) {
       socket.emit("erreur", "Pseudo non reconnu.");
       return;

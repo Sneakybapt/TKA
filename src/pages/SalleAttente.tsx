@@ -13,38 +13,36 @@ export default function SalleAttente() {
 
   // 🔁 Fallback si location.state est vide (refresh ou accès direct)
   const state = location.state || {
-    code: localStorage.getItem("tka_code"),
-    pseudo: localStorage.getItem("tka_pseudo"),
+    code: localStorage.getItem("tka_code")?.trim().toUpperCase(),
+    pseudo: localStorage.getItem("tka_pseudo")?.trim().toLowerCase(),
     joueurs: [],
-    estCreateur: false, // Facultatif selon ta logique
+    estCreateur: false,
   };
 
   const { code, pseudo, joueurs: joueursInitiaux, estCreateur } = state;
   const [joueurs, setJoueurs] = useState<Joueur[]>(joueursInitiaux || []);
   const [readyToLaunch, setReadyToLaunch] = useState(false);
 
-  // 🚨 Si données manquantes ➜ retour au formulaire
+  // 🚨 Sécurité en cas de données manquantes
   useEffect(() => {
     if (!code || !pseudo) {
       navigate("/rejoindre");
     }
   }, [code, pseudo, navigate]);
 
+  // 🔁 Tentative de reconnexion si refresh
   useEffect(() => {
-    const pseudoLS = localStorage.getItem("tka_pseudo");
-    const codeLS = localStorage.getItem("tka_code");
+    const pseudoLS = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
+    const codeLS = localStorage.getItem("tka_code")?.trim().toUpperCase();
 
     if (pseudoLS && codeLS) {
       socket.emit("reconnexion", { pseudo: pseudoLS, code: codeLS });
     }
-}, []);
-
+  }, []);
 
   useEffect(() => {
-    // 🧠 Rendre le bouton "Lancer" actif après le montage
     setReadyToLaunch(true);
 
-    // ✅ Mise à jour reçue à la création ou à l’entrée
     socket.on("partie_creee", ({ joueurs }) => {
       setJoueurs(joueurs);
     });
@@ -53,14 +51,12 @@ export default function SalleAttente() {
       setJoueurs(data);
     });
 
-    // ✅ Démarrage de la partie ➜ sauvegarde + redirection
     socket.on("partie_lancee", ({ pseudo, cible, mission, code }) => {
-      localStorage.setItem("tka_pseudo", pseudo);
-      localStorage.setItem("tka_code", code);
+      localStorage.setItem("tka_pseudo", pseudo.trim().toLowerCase());
+      localStorage.setItem("tka_code", code.trim().toUpperCase());
       localStorage.setItem("tka_mission", mission);
       localStorage.setItem("tka_cible", cible);
 
-      // ⏱ Petit délai pour garantir l’écriture
       setTimeout(() => {
         navigate("/jeu");
       }, 50);
@@ -70,7 +66,6 @@ export default function SalleAttente() {
       alert(message);
     });
 
-    // 🔁 Nettoyage
     return () => {
       socket.off("partie_creee");
       socket.off("mise_a_jour_joueurs");
