@@ -103,48 +103,75 @@ io.on("connection", (socket) => {
     console.log(`🔄 ${pseudo} reconnecté à la partie ${code}`);
   });
 
-  socket.on("lancer_partie", async (code) => {
-    const keys = await redis.keys(`partie:${code}:*`);
-    const joueurs = await Promise.all(keys.map(k => redis.get(k)));
+    socket.on("lancer_partie", async (code) => {
+      const keys = await redis.keys(`partie:${code}:*`);
+      const joueurs = await Promise.all(keys.map(k => redis.get(k)));
 
-    if (!joueurs || joueurs.length < 2) {
-      io.to(code).emit("erreur", "Il faut au moins 2 joueurs.");
-      return;
-    }
+      if (!joueurs || joueurs.length < 2) {
+        io.to(code).emit("erreur", "Il faut au moins 2 joueurs.");
+        return;
+      }
 
-    const joueursMelanges = [...joueurs].sort(() => 0.5 - Math.random());
-    const shuffledMissions = [...missions].sort(() => 0.5 - Math.random());
+      const joueursMelanges = [...joueurs].sort(() => 0.5 - Math.random());
+      const shuffledMissions = [...missions].sort(() => 0.5 - Math.random());
 
-    for (let i = 0; i < joueursMelanges.length; i++) {
-      const joueur = joueursMelanges[i];
-      const cible = joueursMelanges[(i + 1) % joueursMelanges.length];
-      const mission = shuffledMissions[i % shuffledMissions.length] || "Mission secrète.";
-      joueur.cible = cible.pseudo;
-      joueur.mission = mission;
-      await redis.set(`partie:${code}:${joueur.pseudo}`, joueur);
-    }
+      // 💾 Répartition des missions et cibles
+      for (let i = 0; i < joueursMelanges.length; i++) {
+        const joueur = joueursMelanges[i];
+        const cible = joueursMelanges[(i + 1) % joueursMelanges.length];
+        const mission = shuffledMissions[i % shuffledMissions.length] || "Mission secrète.";
 
-    const joueursFinal = await Promise.all(keys.map(k => redis.get(k)));
-    joueursFinal.forEach((j) => {
-      io.to(j.id).emit("partie_lancee", {
-        pseudo: j.pseudo,
-        cible: j.cible,
-        mission: j.mission,
-        code,
+        // 👮 Vérification anti auto-ciblage (même si circulaire l’évite déjà)
+        if (joueur.pseudo === cible.pseudo) {
+          const autre = joueursMelanges.find(j => j.pseudo !== joueur.pseudo);
+          joueur.cible = autre?.pseudo || cible.pseudo;
+        } else {
+          joueur.cible = cible.pseudo;
+        }
+
+        joueur.mission = mission;
+        await redis.set(`partie:${code}:${joueur.pseudo}`, joueur);
+      }
+
+      // 🔒 Mise en pause de la phase d’élimination
+      await redis.set(`statut:${code}`, "enPause");
+
+      const joueursFinal = await Promise.all(keys.map(k => redis.get(k)));
+      joueursFinal.forEach((j) => {
+        io.to(j.id).emit("partie_lancee", {
+          pseudo: j.pseudo,
+          cible: j.cible,
+          mission: j.mission,
+          code,
+        });
       });
+
+      console.log(`🚀 Partie ${code} lancée avec ${joueurs.length} joueurs`);
+
+      // ✅ Activation de la phase d’élimination après 5 sec
+      setTimeout(async () => {
+        await redis.set(`statut:${code}`, "enCours");
+        io.to(code).emit("autorisation_elimination");
+        console.log(`🗡️ Phase d’élimination activée pour ${code}`);
+      }, 5000);
     });
 
-    console.log(`🚀 Partie ${code} lancée avec ${joueurs.length} joueurs`);
-  });
 
-  socket.on("tentative_elimination", async ({ code, tueur, cible, message }) => {
-    const cibleData = await redis.get(`partie:${code}:${cible}`);
-    if (!cibleData) return;
+    socket.on("tentative_elimination", async ({ code, tueur, cible, message }) => {
+      const statut = await redis.get(`statut:${code}`);
+      if (statut !== "enCours") {
+        socket.emit("erreur", "La phase d'élimination n'est pas encore active.");
+        return;
+      }
 
-    eliminationsEnAttente[cible] = { code, tueur, message };
-    io.to(cibleData.id).emit("demande_validation", { tueur, message });
-    console.log(`📤 Tentative envoyée à ${cible}`);
-  });
+      const cibleData = await redis.get(`partie:${code}:${cible}`);
+      if (!cibleData) return;
+
+      eliminationsEnAttente[cible] = { code, tueur, message };
+      io.to(cibleData.id).emit("demande_validation", { tueur, message });
+      console.log(`📤 Tentative envoyée à ${cible}`);
+    });
+
 
   socket.on("validation_elimination", async ({ code, cible, tueur }) => {
     const cibleData = await redis.get(`partie:${code}:${cible}`);
