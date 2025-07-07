@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import socket from "../socket";
 import { useNavigate } from "react-router-dom";
-import "../theme.css";
+import "../themesombre.css";
 
 export default function CreerPartie() {
   const [pseudo, setPseudo] = useState("");

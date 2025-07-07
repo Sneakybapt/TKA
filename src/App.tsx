@@ -5,7 +5,7 @@ import SalleAttente from "./pages/SalleAttente";
 import Jeu from "./pages/Jeu";
 import Victoire from "./pages/Victoire";
 import { Navigate } from "react-router-dom";
-import "./theme.css"; // 💡 ton fichier de thème global
+import "./themesombre.css"; // 💡 ton fichier de thème global
 
 function Accueil() {
   const navigate = useNavigate();

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import "../theme.css";
+import "../themesombre.css";
 
 export default function Victoire() {
   const navigate = useNavigate();

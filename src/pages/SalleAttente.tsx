@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import socket from "../socket";
-import "../theme.css"; // 💡 on garde le style global
+import "../themesombre.css"; // 💡 on garde le style global
 
 type Joueur = {
   id: string;
