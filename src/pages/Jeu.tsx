@@ -32,19 +32,16 @@ export default function Jeu() {
       setEnChargement(false);
     }
 
-    socket.on("reconnexion_ok", ({ pseudo, code, mission, cible }) => {
+    const handleReception = (data: InfosJoueur) => {
+      const { pseudo, code, mission, cible } = data;
+      console.log("✅ Données joueur reçues :", data);
       setInfos({ pseudo, code, mission, cible });
       setEnChargement(false);
-    });
+    };
 
-    socket.on("partie_lancee", ({ pseudo, code, cible, mission }) => {
-      localStorage.setItem("tka_pseudo", pseudo.trim().toLowerCase());
-      localStorage.setItem("tka_code", code);
-      localStorage.setItem("tka_mission", mission);
-      localStorage.setItem("tka_cible", cible);
-      setInfos({ pseudo, code, mission, cible });
-      setEnChargement(false);
-    });
+
+    socket.on("reconnexion_ok", handleReception);
+    socket.on("partie_lancee", handleReception);
 
     socket.on("demande_validation", ({ tueur, message }) => {
       setNotification({ tueur, message });
@@ -60,8 +57,8 @@ export default function Jeu() {
     });
 
     return () => {
-      socket.off("reconnexion_ok");
-      socket.off("partie_lancee");
+      socket.off("reconnexion_ok", handleReception);
+      socket.off("partie_lancee", handleReception);
       socket.off("demande_validation");
       socket.off("victoire");
       socket.off("erreur");

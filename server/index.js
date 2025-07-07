@@ -8,20 +8,13 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ Connexion Upstash Redis via REST
 const redis = new Redis({
   url: "https://workable-glider-46770.upstash.io",
   token: "AbayAAIjcDE1ZGJkYjg4Njg0MTI0N2IyYTQ2NTk4NGM5MGE0NDY1ZXAxMA"
 });
 
-
-redis.set("test:connect", { ok: true })
-  .then(() => console.log("✅ Upstash Redis accessible"))
-  .catch(err => console.error("❌ Problème de connexion Redis :", err));
-
 const missionsPath = path.join(__dirname, "missions.json");
 
-// 🧠 Chargement des missions
 let missions = [];
 try {
   const data = fs.readFileSync(missionsPath, "utf-8");
@@ -97,7 +90,15 @@ io.on("connection", (socket) => {
     const keys = await redis.keys(`partie:${code}:*`);
     const joueurs = await Promise.all(keys.map(k => redis.get(k)));
 
-    socket.emit("reconnexion_ok", { code, joueurs });
+    // ✅ Envoi enrichi
+    socket.emit("reconnexion_ok", {
+      pseudo: joueur.pseudo,
+      code,
+      mission: joueur.mission,
+      cible: joueur.cible,
+      joueurs
+    });
+
     io.to(code).emit("mise_a_jour_joueurs", joueurs);
     console.log(`🔄 ${pseudo} reconnecté à la partie ${code}`);
   });
