@@ -63,6 +63,12 @@ export default function SalleAttente() {
       alert(message);
     });
 
+    socket.on("reconnexion_ok", ({ joueurs, mission, cible }) => {
+      console.log("🔄 Reconnexion_ok dans SalleAttente :", { joueurs, mission, cible });
+      setJoueurs(joueurs);
+    });
+
+
     return () => {
       socket.off("partie_creee");
       socket.off("mise_a_jour_joueurs");
