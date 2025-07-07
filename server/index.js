@@ -1,8 +1,10 @@
-const http = require("http");
-const { Server } = require("socket.io");
-const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
+import Redis from "ioredis";
+import http from "http";
+import { Server } from "socket.io";
+import fs from "fs";
+import path from "path";
+
+const redis = new Redis("rediss://default:AbayAAIjcDE1ZGJkYjg4Njg0MTI0N2IyYTQ2NTk4NGM5MGE0NDY1ZXAxMA@workable-glider-46770.upstash.io:443");
 
 const missionsPath = path.join(__dirname, "missions.json");
 
@@ -16,14 +18,11 @@ try {
   console.error("❌ Impossible de charger les missions :", err.message);
 }
 
-// 🧠 Mémoire des parties
-const parties = {};
 const eliminationsEnAttente = {};
-
-const server = http.createServer(); // ⛔️ Pas d'app Express ici
+const server = http.createServer();
 const io = new Server(server, {
   cors: {
-    origin: "*", // ✅ Permet les appels depuis le frontend
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
@@ -31,45 +30,40 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("🔌 Connexion :", socket.id);
 
-  socket.on("creer_partie", ({ pseudo }) => {
+  socket.on("creer_partie", async ({ pseudo }) => {
     const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-    parties[code] = [{ id: socket.id, pseudo }];
+    const joueur = { id: socket.id, pseudo, code };
+    await redis.set(`partie:${code}:${pseudo}`, JSON.stringify(joueur));
     socket.join(code);
-    socket.emit("partie_creee", { code, joueurs: parties[code] });
+    socket.emit("partie_creee", { code, joueurs: [joueur] });
     console.log(`🎲 Partie ${code} créée par ${pseudo}`);
   });
 
-  socket.on("rejoindre_partie", ({ code, pseudo }) => {
-    if (parties[code]) {
-      parties[code].push({ id: socket.id, pseudo });
-      socket.join(code);
+  socket.on("rejoindre_partie", async ({ code, pseudo }) => {
+    const joueur = { id: socket.id, pseudo, code };
+    await redis.set(`partie:${code}:${pseudo}`, JSON.stringify(joueur));
+    socket.join(code);
+    socket.emit("confirmation_rejoindre", { code, pseudo });
 
-      // ✅ Envoie une confirmation directe au joueur
-      socket.emit("confirmation_rejoindre", { code, pseudo });
-      socket.emit("mise_a_jour_joueurs", parties[code]); // 🆕 Envoi immédiat au joueur
-      // ✅ Mise à jour pour tous les joueurs
-      io.to(code).emit("mise_a_jour_joueurs", parties[code]);
-      console.log(`➡️ ${pseudo} a rejoint la partie ${code}`);
-    } else {
-      socket.emit("erreur", "Code de partie invalide");
-    }
+    // 🧠 Récupère tous les joueurs de cette partie
+    const keys = await redis.keys(`partie:${code}:*`);
+    const joueurs = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
+
+    socket.emit("mise_a_jour_joueurs", joueurs);
+    io.to(code).emit("mise_a_jour_joueurs", joueurs);
+    console.log(`➡️ ${pseudo} a rejoint la partie ${code}`);
   });
 
-  socket.on("reconnexion", ({ code, pseudo }) => {
-    const joueurs = parties[code];
-    if (!joueurs) {
-      socket.emit("erreur", "Partie introuvable.");
-      return;
-    }
-
-    const joueur = joueurs.find(j => j.pseudo.trim().toLowerCase() === pseudo.trim().toLowerCase());
-
-    if (!joueur) {
+  socket.on("reconnexion", async ({ code, pseudo }) => {
+    const data = await redis.get(`partie:${code}:${pseudo}`);
+    if (!data) {
       socket.emit("erreur", "Pseudo non reconnu.");
       return;
     }
 
+    const joueur = JSON.parse(data);
     joueur.id = socket.id;
+    await redis.set(`partie:${code}:${pseudo}`, JSON.stringify(joueur));
     socket.join(code);
 
     if (joueur.mission && joueur.cible) {
@@ -81,7 +75,6 @@ io.on("connection", (socket) => {
       });
     }
 
-
     const tentative = eliminationsEnAttente[pseudo];
     if (tentative) {
       socket.emit("demande_validation", {
@@ -90,103 +83,87 @@ io.on("connection", (socket) => {
       });
     }
 
+    const keys = await redis.keys(`partie:${code}:*`);
+    const joueurs = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
+
     socket.emit("reconnexion_ok", { code, joueurs });
     io.to(code).emit("mise_a_jour_joueurs", joueurs);
     console.log(`🔄 ${pseudo} reconnecté à la partie ${code}`);
   });
 
-    socket.on("lancer_partie", (code) => {
-      const joueurs = parties[code];
-      if (!joueurs || joueurs.length < 2) {
-        io.to(code).emit("erreur", "Il faut au moins 2 joueurs.");
-        return;
-      }
+  socket.on("lancer_partie", async (code) => {
+    const keys = await redis.keys(`partie:${code}:*`);
+    const joueurs = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
 
-      const joueursMelanges = [...joueurs].sort(() => 0.5 - Math.random());
-      const shuffledMissions = [...missions].sort(() => 0.5 - Math.random());
+    if (!joueurs || joueurs.length < 2) {
+      io.to(code).emit("erreur", "Il faut au moins 2 joueurs.");
+      return;
+    }
 
-      const donneesJoueurs = joueursMelanges.map((joueur, index) => {
-        const cible = joueursMelanges[(index + 1) % joueursMelanges.length];
-        const mission = shuffledMissions[index % shuffledMissions.length] || "Mission secrète.";
-        return {
-          id: joueur.id,
-          pseudo: joueur.pseudo,
-          cible: cible.pseudo,
-          mission,
-        };
+    const joueursMelanges = [...joueurs].sort(() => 0.5 - Math.random());
+    const shuffledMissions = [...missions].sort(() => 0.5 - Math.random());
+
+    for (let i = 0; i < joueursMelanges.length; i++) {
+      const joueur = joueursMelanges[i];
+      const cible = joueursMelanges[(i + 1) % joueursMelanges.length];
+      const mission = shuffledMissions[i % shuffledMissions.length] || "Mission secrète.";
+      joueur.cible = cible.pseudo;
+      joueur.mission = mission;
+      await redis.set(`partie:${code}:${joueur.pseudo}`, JSON.stringify(joueur));
+    }
+
+    const joueursFinal = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
+    joueursFinal.forEach((j) => {
+      io.to(j.id).emit("partie_lancee", {
+        pseudo: j.pseudo,
+        cible: j.cible,
+        mission: j.mission,
+        code,
       });
-
-      // 🔍 Vérification des pseudos
-      console.log("✅ Pseudos originaux :", joueurs.map(j => j.pseudo));
-      console.log("🔄 Pseudos attribués :", donneesJoueurs.map(j => j.pseudo));
-
-      // 🛠 Fusion : ajoute mission & cible sans perdre les joueurs originaux
-      parties[code] = joueurs.map(joueurOrig => {
-        const extension = donneesJoueurs.find(j => j.pseudo === joueurOrig.pseudo) || {};
-        return {
-          ...joueurOrig,
-          mission: extension.mission || "Mission manquante",
-          cible: extension.cible || "Cible inconnue"
-        };
-      });
-
-      // ✅ Envoie les données réellement fusionnées aux joueurs
-      parties[code].forEach((j) => {
-        io.to(j.id).emit("partie_lancee", {
-          pseudo: j.pseudo,
-          cible: j.cible,
-          mission: j.mission,
-          code,
-        });
-      });
-
-      console.log(`🚀 Partie ${code} lancée avec ${joueurs.length} joueurs`);
     });
 
+    console.log(`🚀 Partie ${code} lancée avec ${joueurs.length} joueurs`);
+  });
 
-  socket.on("tentative_elimination", ({ code, tueur, cible, message }) => {
-    console.log("📤 Tentative reçue :", { code, tueur, cible });
-    
-    const joueurs = parties[code];
-    if (!joueurs) return;
-
-    const cibleData = joueurs.find(j => j.pseudo === cible);
-    console.log("🎯 ID cible :", cibleData?.id);
+  socket.on("tentative_elimination", async ({ code, tueur, cible, message }) => {
+    const cibleData = await redis.get(`partie:${code}:${cible}`);
     if (!cibleData) return;
 
+    const cibleParsed = JSON.parse(cibleData);
     eliminationsEnAttente[cible] = { code, tueur, message };
-    io.to(cibleData.id).emit("demande_validation", { tueur, message });
+
+    io.to(cibleParsed.id).emit("demande_validation", { tueur, message });
     console.log(`📤 Tentative envoyée à ${cible}`);
   });
 
-  socket.on("validation_elimination", ({ code, cible, tueur }) => {
-    const joueurs = parties[code];
-    if (!joueurs) return;
-
-    const cibleData = joueurs.find(j => j.pseudo === cible);
-    const tueurData = joueurs.find(j => j.pseudo === tueur);
+  socket.on("validation_elimination", async ({ code, cible, tueur }) => {
+    const cibleData = await redis.get(`partie:${code}:${cible}`);
+    const tueurData = await redis.get(`partie:${code}:${tueur}`);
     if (!cibleData || !tueurData) return;
 
-    const nouvelleCible = cibleData.cible;
-    const nouvelleMission = cibleData.mission || "Mission secrète.";
-    const nouvelleListe = joueurs.filter(j => j.pseudo !== cible);
+    const cibleParsed = JSON.parse(cibleData);
+    const tueurParsed = JSON.parse(tueurData);
 
-    tueurData.cible = nouvelleCible;
-    tueurData.mission = nouvelleMission;
-    parties[code] = nouvelleListe;
+    tueurParsed.cible = cibleParsed.cible;
+    tueurParsed.mission = cibleParsed.mission || "Mission secrète.";
+    await redis.set(`partie:${code}:${tueur}`, JSON.stringify(tueurParsed));
+    await redis.del(`partie:${code}:${cible}`);
 
-    io.to(tueurData.id).emit("partie_lancee", {
-      pseudo: tueurData.pseudo,
-      cible: nouvelleCible,
-      mission: nouvelleMission,
+    io.to(tueurParsed.id).emit("partie_lancee", {
+      pseudo: tueurParsed.pseudo,
+      cible: tueurParsed.cible,
+      mission: tueurParsed.mission,
       code,
     });
 
-    io.to(code).emit("mise_a_jour_joueurs", nouvelleListe);
+    const keys = await redis.keys(`partie:${code}:*`);
+    const joueursRestants = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
+
+    io.to(code).emit("mise_a_jour_joueurs", joueursRestants);
     console.log(`☠️ ${cible} éliminé par ${tueur}`);
 
-    if (nouvelleListe.length === 1) {
-      const survivant = nouvelleListe[0];
+    if (joueursRestants.length === 1) {
+      const survivant = joueursRestants[0];
       io.to(survivant.id).emit("victoire");
       console.log(`🏆 ${survivant.pseudo} a gagné la partie ${code}`);
     }
@@ -194,15 +171,22 @@ io.on("connection", (socket) => {
     delete eliminationsEnAttente[cible];
   });
 
-  socket.on("disconnect", () => {
-    for (const code in parties) {
-      parties[code] = parties[code].filter(j => j.id !== socket.id);
-      io.to(code).emit("mise_a_jour_joueurs", parties[code]);
+  socket.on("disconnect", async () => {
+    const keys = await redis.keys("partie:*:*");
+    for (const key of keys) {
+      const data = await redis.get(key);
+      if (!data) continue;
+      const joueur = JSON.parse(data);
+      if (joueur.id === socket.id) {
+        await redis.del(key);
+        io.to(joueur.code).emit("mise_a_jour_joueurs", await Promise.all(
+          (await redis.keys(`partie:${joueur.code}:*`)).map(k => redis.get(k).then(JSON.parse))
+        ));
+        console.log("🔌 Déconnecté :", socket.id);
+      }
     }
-    console.log("🔌 Déconnecté :", socket.id);
   });
 });
-
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
