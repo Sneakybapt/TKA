@@ -50,12 +50,6 @@ function Accueil() {
       >
         Rejoindre une partie
       </button>
-      <button
-        style={{ ...buttonStyle, backgroundColor: "#999" }}
-        onClick={() => navigate("/reprendre")}
-      >
-        🔁 Reprendre une partie
-      </button>
     </div>
   );
 }
