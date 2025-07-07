@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import "../theme.css";
 
 export default function Victoire() {
   const navigate = useNavigate();
@@ -10,24 +11,16 @@ export default function Victoire() {
   };
 
   return (
-    <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>🏆 Tu as gagné !</h1>
-      <p>Félicitations, tu es le dernier survivant de l’arène.</p>
-      <p>Version 2 : classement des éliminations à venir 😎</p>
+    <div className="victoire-container">
+      <h1 className="victoire-title">🏆 Tu as gagné !</h1>
+      <p className="victoire-message">
+        Félicitations, tu es le dernier survivant de l’arène.
+      </p>
+      <p className="victoire-subtext">
+        Version 2 : classement des éliminations à venir 😎
+      </p>
 
-      <button
-        onClick={handleRetourAccueil}
-        style={{
-          marginTop: "2rem",
-          padding: "0.75rem 1.5rem",
-          fontSize: "1rem",
-          backgroundColor: "#222",
-          color: "#fff",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-        }}
-      >
+      <button className="accueil-button" onClick={handleRetourAccueil}>
         🔙 Retour à l’accueil
       </button>
     </div>

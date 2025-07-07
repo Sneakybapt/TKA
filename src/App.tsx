@@ -5,49 +5,22 @@ import SalleAttente from "./pages/SalleAttente";
 import Jeu from "./pages/Jeu";
 import Victoire from "./pages/Victoire";
 import { Navigate } from "react-router-dom";
+import "./theme.css"; // 💡 ton fichier de thème global
 
 function Accueil() {
   const navigate = useNavigate();
 
-  const buttonStyle = {
-    padding: "1rem 2rem",
-    margin: "1rem",
-    fontSize: "1rem",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    backgroundColor: "#222",
-    color: "#fff",
-  };
-
   return (
-    <div
-      style={{
-        fontFamily: "sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-        backgroundColor: "#f7f7f7",
-        textAlign: "center",
-        padding: "2rem",
-      }}
-    >
-      <h1 style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>
-        Killer · Le Jeu
-      </h1>
-      <p style={{ maxWidth: "400px", marginBottom: "2rem", fontSize: "1.1rem" }}>
+    <div className="accueil-container">
+      <h1 className="accueil-title">Killer · Le Jeu</h1>
+      <p className="accueil-subtitle">
         Éliminez votre cible. Soyez discret. Survivez.
       </p>
 
-      <button style={buttonStyle} onClick={() => navigate("/creer")}>
+      <button className="accueil-button" onClick={() => navigate("/creer")}>
         Créer une partie
       </button>
-      <button
-        style={{ ...buttonStyle, backgroundColor: "#555" }}
-        onClick={() => navigate("/rejoindre")}
-      >
+      <button className="accueil-button" onClick={() => navigate("/rejoindre")}>
         Rejoindre une partie
       </button>
     </div>

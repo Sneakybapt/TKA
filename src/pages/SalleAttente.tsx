@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import socket from "../socket";
+import "../theme.css"; // 💡 on garde le style global
 
 type Joueur = {
   id: string;
@@ -78,32 +79,34 @@ export default function SalleAttente() {
   }, [navigate]);
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>🕹️ Salle d’attente</h2>
-      <p><strong>Code de la partie :</strong> {code}</p>
+      <div className="salleattente-container">
+        <h2 className="salleattente-title">🕹️ Salle d’attente</h2>
+        <p className="salleattente-subtitle">
+          <strong>Code de la partie :</strong> {code}
+        </p>
 
-      <h3>Joueurs connectés :</h3>
-      <ul>
-        {joueurs.map((j) => (
-          <li key={j.id}>{j.pseudo}</li>
-        ))}
-      </ul>
+        <h3 className="salleattente-section">Joueurs connectés :</h3>
+        <ul className="salleattente-list">
+          {joueurs.map((j) => (
+            <li key={j.id} className="salleattente-joueur">
+              {j.pseudo}
+            </li>
+          ))}
+        </ul>
 
-      {estCreateur && (
-        <button
-          disabled={!readyToLaunch}
-          onClick={() => socket.emit("lancer_partie", code)}
-          style={{
-            marginTop: "2rem",
-            padding: "0.75rem 1.5rem",
-            fontSize: "1rem",
-            opacity: readyToLaunch ? 1 : 0.5,
-            cursor: readyToLaunch ? "pointer" : "not-allowed",
-          }}
-        >
-          🚀 Lancer la partie
-        </button>
-      )}
-    </div>
-  );
+        {estCreateur && (
+          <button
+            className="accueil-button"
+            onClick={() => socket.emit("lancer_partie", code)}
+            disabled={!readyToLaunch}
+            style={{
+              opacity: readyToLaunch ? 1 : 0.5,
+              cursor: readyToLaunch ? "pointer" : "not-allowed",
+            }}
+          >
+            🚀 Lancer la partie
+          </button>
+        )}
+      </div>
+    );
 }

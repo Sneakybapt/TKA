@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import socket from "../socket";
 import { useNavigate } from "react-router-dom";
+import "../theme.css";
 
 export default function CreerPartie() {
   const [pseudo, setPseudo] = useState("");
@@ -40,17 +41,18 @@ export default function CreerPartie() {
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Créer une partie</h2>
-      <form onSubmit={handleSubmit}>
+    <div className="creer-container">
+      <h2 className="creer-title">🛠️ Créer une partie</h2>
+      <form className="creer-form" onSubmit={handleSubmit}>
         <input
           type="text"
+          className="creer-input"
           value={pseudo}
           onChange={(e) => setPseudo(e.target.value)}
           placeholder="Votre pseudo"
           required
         />
-        <button type="submit" style={{ marginLeft: "1rem" }}>
+        <button type="submit" className="accueil-button">
           Créer la partie
         </button>
       </form>

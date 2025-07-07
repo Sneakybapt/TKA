@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import socket from "../socket";
 import { useNavigate } from "react-router-dom";
+import "../theme.css";
 
 export default function RejoindrePartie() {
   const [pseudo, setPseudo] = useState("");
@@ -50,26 +51,26 @@ export default function RejoindrePartie() {
   };
 
   return (
-    <div className="container">
-      <h2>Rejoindre une partie</h2>
-      <form onSubmit={handleSubmit} className="form">
+    <div className="rejoindre-container">
+      <h2 className="rejoindre-title">🎯 Rejoindre une partie</h2>
+      <form className="rejoindre-form" onSubmit={handleSubmit}>
         <input
           type="text"
+          className="rejoindre-input"
           placeholder="Votre pseudo"
           value={pseudo}
           onChange={(e) => setPseudo(e.target.value)}
           required
-          className="input"
         />
         <input
           type="text"
+          className="rejoindre-input"
           placeholder="Code de la partie"
           value={code}
           onChange={(e) => setCode(e.target.value)}
           required
-          className="input"
         />
-        <button type="submit" className="btn-rejoindre">
+        <button type="submit" className="accueil-button">
           Rejoindre
         </button>
       </form>

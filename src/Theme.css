@@ -1,0 +1,211 @@
+/* AGENT FANTÔME — Style sombre et thriller */
+body {
+  margin: 0;
+  background: url("images/fond ecran.jpg") no-repeat center center fixed;
+  background-size: cover;
+  color: #f2f2f2;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accueil-container {
+  text-align: center;
+  padding: 2rem;
+
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.1);
+  width: 90%;
+  max-width: 500px;
+}
+
+.accueil-title {
+  font-size: 2.8rem;
+  color: #b22222;
+  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.accueil-subtitle {
+  font-size: 1.1rem;
+  color: #cccccc;
+  margin-bottom: 2rem;
+  font-weight: bold;
+}
+
+.accueil-button {
+  display: block;
+  width: 100%;
+  margin: 1rem 0;
+  padding: 1rem;
+  font-size: 1.1rem;
+    background-color: rgba(178, 34, 34, 0.30); /* rouge sombre + transparence */;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background-color 0.3s ease;
+  backdrop-filter: blur(2px); /* effet un peu verré */
+}
+
+.accueil-button:hover {
+  background-color: #b22222;
+}
+
+
+.salleattente-container {
+  text-align: center;
+  padding: 2rem;
+  max-width: 500px;
+  margin: auto;
+  background-color: rgba(13, 13, 13, 0.85);
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.1);
+  position: relative;
+  z-index: 1;
+  color: #f2f2f2;
+}
+
+.salleattente-title {
+  font-size: 2.2rem;
+  color: #ff3b3b;
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+.salleattente-subtitle {
+  font-size: 1.1rem;
+  color: #cccccc;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+.salleattente-joueurs {
+  margin-bottom: 2rem;
+}
+
+.salleattente-joueur {
+  font-size: 1rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.creer-container {
+  background-color: rgba(13, 13, 13, 0.85);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.1);
+  max-width: 500px;
+  margin: auto;
+  text-align: center;
+  color: #f2f2f2;
+  z-index: 1;
+}
+
+.creer-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #b22222;
+  margin-bottom: 1.5rem;
+}
+
+.creer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.creer-input {
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f2f2f2;
+  backdrop-filter: blur(2px);
+}
+
+.creer-input::placeholder {
+  color: #aaaaaa;
+}
+
+.rejoindre-container {
+  background-color: rgba(13, 13, 13, 0.85);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.1);
+  max-width: 500px;
+  margin: auto;
+  text-align: center;
+  color: #f2f2f2;
+  z-index: 1;
+}
+
+.rejoindre-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #b22222;
+  margin-bottom: 1.5rem;
+}
+
+.rejoindre-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rejoindre-input {
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f2f2f2;
+  backdrop-filter: blur(2px);
+}
+
+.rejoindre-input::placeholder {
+  color: #aaaaaa;
+}
+
+
+.rejoindre-container {
+  background-color: rgba(13, 13, 13, 0.85);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.1);
+  max-width: 500px;
+  margin: auto;
+  text-align: center;
+  color: #f2f2f2;
+  z-index: 1;
+}
+
+.rejoindre-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #b22222;
+  margin-bottom: 1.5rem;
+}
+
+.rejoindre-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rejoindre-input {
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f2f2f2;
+  backdrop-filter: blur(2px);
+}
+
+.rejoindre-input::placeholder {
+  color: #aaaaaa;
+}
