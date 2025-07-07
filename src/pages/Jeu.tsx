@@ -116,7 +116,7 @@ export default function Jeu() {
       <p>🎭 Ta mission : <em>{infos.mission}</em></p>
 
       {notification && (
-        <div style={{ marginTop: "2rem", border: "2px dashed red", padding: "1rem", backgroundColor: "#ffe5e5" }}>
+        <div style={{ marginTop: "2rem", color: "white", border:"1px dashed #b22222", padding: "1rem", backgroundColor: "rgba(178, 34, 34, 0.30)" }}>
           <p><strong>{notification.tueur}</strong> t’a ciblé avec cette mission :</p>
           <blockquote>{notification.message}</blockquote>
           <button
@@ -124,14 +124,14 @@ export default function Jeu() {
             style={{
               marginTop: "1rem",
               padding: "0.75rem 1.5rem",
-              backgroundColor: "crimson",
+              backgroundColor: "rgba(178, 34, 34, 0.75)",
               color: "white",
               border: "none",
               borderRadius: "4px",
               cursor: "pointer",
             }}
           >
-            ✅ J’ai été éliminé
+          🚫 J’ai été éliminé
           </button>
         </div>
       )}
@@ -143,7 +143,7 @@ export default function Jeu() {
             marginTop: "2rem",
             padding: "0.75rem 1.5rem",
             fontSize: "1rem",
-            backgroundColor: "green",
+            backgroundColor: "rgba(102,51,153, 0.75)",
             color: "white",
             border: "none",
             borderRadius: "4px",

@@ -40,7 +40,7 @@ body {
   margin: 1rem 0;
   padding: 1rem;
   font-size: 1.1rem;
-    background-color: rgba(178, 34, 34, 0.30); /* rouge sombre + transparence */;
+  background-color: rgba(178, 34, 34, 0.30); /* rouge sombre + transparence */;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -209,3 +209,4 @@ body {
 .rejoindre-input::placeholder {
   color: #aaaaaa;
 }
+
