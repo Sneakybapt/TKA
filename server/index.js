@@ -178,21 +178,29 @@ io.on("connection", (socket) => {
     delete eliminationsEnAttente[cible];
   });
 
-  socket.on("disconnect", async () => {
-    const keys = await redis.keys("partie:*:*");
-    for (const key of keys) {
-      const joueur = await redis.get(key);
-      if (!joueur) continue;
-      if (joueur.id === socket.id) {
-        await redis.del(key);
-        const restants = await Promise.all(
-          (await redis.keys(`partie:${joueur.code}:*`)).map(k => redis.get(k))
-        );
-        io.to(joueur.code).emit("mise_a_jour_joueurs", restants);
-        console.log("🔌 Déconnecté :", socket.id);
+    socket.on("disconnect", async () => {
+      const keys = await redis.keys("partie:*:*");
+
+      for (const key of keys) {
+        const joueur = await redis.get(key);
+        if (!joueur) continue;
+
+        if (joueur.id === socket.id) {
+          console.log(`⚠️ Déconnexion de ${joueur.pseudo} (${joueur.code})`);
+
+          // ✅ Mise en veille sans suppression
+          joueur.id = null;
+          await redis.set(key, joueur);
+
+          const restants = await Promise.all(
+            (await redis.keys(`partie:${joueur.code}:*`)).map(k => redis.get(k))
+          );
+
+          io.to(joueur.code).emit("mise_a_jour_joueurs", restants);
+        }
       }
-    }
-  });
+    });
+
 });
 
 const PORT = process.env.PORT || 3000;
