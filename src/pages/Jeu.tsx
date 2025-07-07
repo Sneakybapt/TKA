@@ -110,10 +110,14 @@ export default function Jeu() {
   }
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <div style={{ padding: "3rem" }}>
       <h2>Bienvenue <strong>{infos.pseudo}</strong> !</h2>
-      <p>🎯 Ta cible : <strong>{infos.cible}</strong></p>
-      <p>🎭 Ta mission : <em>{infos.mission}</em></p>
+      <p style={{fontSize : "1.2rem"}}>
+        🎯 Ta cible : <strong>{infos.cible}</strong>
+        </p>
+      <p style={{fontSize : "1.2rem"}}>
+        🕵️ Ta mission : <em>{infos.mission}</em>
+        </p>
 
       {notification && (
         <div style={{ marginTop: "2rem", color: "white", border:"1px dashed #b22222", padding: "1rem", backgroundColor: "rgba(178, 34, 34, 0.30)" }}>
@@ -155,11 +159,11 @@ export default function Jeu() {
       ) : (
         <div style={{ marginTop: "2rem" }}>
           <textarea
-            rows={4}
+            rows={5}
             placeholder="Décris ici comment tu as accompli ta mission..."
             value={texteMission}
             onChange={(e) => setTexteMission(e.target.value)}
-            style={{ width: "100%", padding: "0.75rem", fontSize: "1rem" }}
+            className="mission-textarea"
           />
           <button
             onClick={handleEnvoyerMission}
@@ -167,14 +171,14 @@ export default function Jeu() {
               marginTop: "1rem",
               padding: "0.75rem 1.5rem",
               fontSize: "1rem",
-              backgroundColor: "#007bff",
+              backgroundColor: "rgba(102,51,153, 0.75)",
               color: "white",
               border: "none",
               borderRadius: "4px",
               cursor: "pointer",
             }}
           >
-            📤 Envoyer à ma cible
+            🗡️ Envoyer à ma cible
           </button>
         </div>
       )}
