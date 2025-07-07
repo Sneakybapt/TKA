@@ -1,10 +1,18 @@
-import Redis from "ioredis";
+import { Redis } from "@upstash/redis";
 import http from "http";
 import { Server } from "socket.io";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const redis = new Redis("rediss://default:AbayAAIjcDE1ZGJkYjg4Njg0MTI0N2IyYTQ2NTk4NGM5MGE0NDY1ZXAxMA@workable-glider-46770.upstash.io:443");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ✅ Connexion Upstash Redis via REST
+const redis = new Redis({
+  url: "https://workable-glider-46770.upstash.io",
+  token: "AbayAAIjcDE1ZGJkYjg4Njg0MTI0N2IyYTQ2NTk4NGM5MGE0NDY1ZXAxMA"
+});
 
 const missionsPath = path.join(__dirname, "missions.json");
 
@@ -33,7 +41,7 @@ io.on("connection", (socket) => {
   socket.on("creer_partie", async ({ pseudo }) => {
     const code = Math.random().toString(36).substring(2, 6).toUpperCase();
     const joueur = { id: socket.id, pseudo, code };
-    await redis.set(`partie:${code}:${pseudo}`, JSON.stringify(joueur));
+    await redis.set(`partie:${code}:${pseudo}`, joueur);
     socket.join(code);
     socket.emit("partie_creee", { code, joueurs: [joueur] });
     console.log(`🎲 Partie ${code} créée par ${pseudo}`);
@@ -41,13 +49,12 @@ io.on("connection", (socket) => {
 
   socket.on("rejoindre_partie", async ({ code, pseudo }) => {
     const joueur = { id: socket.id, pseudo, code };
-    await redis.set(`partie:${code}:${pseudo}`, JSON.stringify(joueur));
+    await redis.set(`partie:${code}:${pseudo}`, joueur);
     socket.join(code);
     socket.emit("confirmation_rejoindre", { code, pseudo });
 
-    // 🧠 Récupère tous les joueurs de cette partie
     const keys = await redis.keys(`partie:${code}:*`);
-    const joueurs = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
+    const joueurs = await Promise.all(keys.map(k => redis.get(k)));
 
     socket.emit("mise_a_jour_joueurs", joueurs);
     io.to(code).emit("mise_a_jour_joueurs", joueurs);
@@ -55,15 +62,14 @@ io.on("connection", (socket) => {
   });
 
   socket.on("reconnexion", async ({ code, pseudo }) => {
-    const data = await redis.get(`partie:${code}:${pseudo}`);
-    if (!data) {
+    const joueur = await redis.get(`partie:${code}:${pseudo}`);
+    if (!joueur) {
       socket.emit("erreur", "Pseudo non reconnu.");
       return;
     }
 
-    const joueur = JSON.parse(data);
     joueur.id = socket.id;
-    await redis.set(`partie:${code}:${pseudo}`, JSON.stringify(joueur));
+    await redis.set(`partie:${code}:${pseudo}`, joueur);
     socket.join(code);
 
     if (joueur.mission && joueur.cible) {
@@ -84,7 +90,7 @@ io.on("connection", (socket) => {
     }
 
     const keys = await redis.keys(`partie:${code}:*`);
-    const joueurs = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
+    const joueurs = await Promise.all(keys.map(k => redis.get(k)));
 
     socket.emit("reconnexion_ok", { code, joueurs });
     io.to(code).emit("mise_a_jour_joueurs", joueurs);
@@ -93,7 +99,7 @@ io.on("connection", (socket) => {
 
   socket.on("lancer_partie", async (code) => {
     const keys = await redis.keys(`partie:${code}:*`);
-    const joueurs = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
+    const joueurs = await Promise.all(keys.map(k => redis.get(k)));
 
     if (!joueurs || joueurs.length < 2) {
       io.to(code).emit("erreur", "Il faut au moins 2 joueurs.");
@@ -109,10 +115,10 @@ io.on("connection", (socket) => {
       const mission = shuffledMissions[i % shuffledMissions.length] || "Mission secrète.";
       joueur.cible = cible.pseudo;
       joueur.mission = mission;
-      await redis.set(`partie:${code}:${joueur.pseudo}`, JSON.stringify(joueur));
+      await redis.set(`partie:${code}:${joueur.pseudo}`, joueur);
     }
 
-    const joueursFinal = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
+    const joueursFinal = await Promise.all(keys.map(k => redis.get(k)));
     joueursFinal.forEach((j) => {
       io.to(j.id).emit("partie_lancee", {
         pseudo: j.pseudo,
@@ -129,10 +135,8 @@ io.on("connection", (socket) => {
     const cibleData = await redis.get(`partie:${code}:${cible}`);
     if (!cibleData) return;
 
-    const cibleParsed = JSON.parse(cibleData);
     eliminationsEnAttente[cible] = { code, tueur, message };
-
-    io.to(cibleParsed.id).emit("demande_validation", { tueur, message });
+    io.to(cibleData.id).emit("demande_validation", { tueur, message });
     console.log(`📤 Tentative envoyée à ${cible}`);
   });
 
@@ -141,23 +145,20 @@ io.on("connection", (socket) => {
     const tueurData = await redis.get(`partie:${code}:${tueur}`);
     if (!cibleData || !tueurData) return;
 
-    const cibleParsed = JSON.parse(cibleData);
-    const tueurParsed = JSON.parse(tueurData);
-
-    tueurParsed.cible = cibleParsed.cible;
-    tueurParsed.mission = cibleParsed.mission || "Mission secrète.";
-    await redis.set(`partie:${code}:${tueur}`, JSON.stringify(tueurParsed));
+    tueurData.cible = cibleData.cible;
+    tueurData.mission = cibleData.mission || "Mission secrète.";
+    await redis.set(`partie:${code}:${tueur}`, tueurData);
     await redis.del(`partie:${code}:${cible}`);
 
-    io.to(tueurParsed.id).emit("partie_lancee", {
-      pseudo: tueurParsed.pseudo,
-      cible: tueurParsed.cible,
-      mission: tueurParsed.mission,
+    io.to(tueurData.id).emit("partie_lancee", {
+      pseudo: tueurData.pseudo,
+      cible: tueurData.cible,
+      mission: tueurData.mission,
       code,
     });
 
     const keys = await redis.keys(`partie:${code}:*`);
-    const joueursRestants = await Promise.all(keys.map(k => redis.get(k).then(JSON.parse)));
+    const joueursRestants = await Promise.all(keys.map(k => redis.get(k)));
 
     io.to(code).emit("mise_a_jour_joueurs", joueursRestants);
     console.log(`☠️ ${cible} éliminé par ${tueur}`);
@@ -174,14 +175,14 @@ io.on("connection", (socket) => {
   socket.on("disconnect", async () => {
     const keys = await redis.keys("partie:*:*");
     for (const key of keys) {
-      const data = await redis.get(key);
-      if (!data) continue;
-      const joueur = JSON.parse(data);
+      const joueur = await redis.get(key);
+      if (!joueur) continue;
       if (joueur.id === socket.id) {
         await redis.del(key);
-        io.to(joueur.code).emit("mise_a_jour_joueurs", await Promise.all(
-          (await redis.keys(`partie:${joueur.code}:*`)).map(k => redis.get(k).then(JSON.parse))
-        ));
+        const restants = await Promise.all(
+          (await redis.keys(`partie:${joueur.code}:*`)).map(k => redis.get(k))
+        );
+        io.to(joueur.code).emit("mise_a_jour_joueurs", restants);
         console.log("🔌 Déconnecté :", socket.id);
       }
     }
