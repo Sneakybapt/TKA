@@ -46,7 +46,6 @@ io.on("connection", (socket) => {
   socket.on("creer_partie", async ({ pseudo }) => {
     const code = Math.random().toString(36).substring(2, 6).toUpperCase();
     const joueur = { id: socket.id, pseudo, code };
-    console.log("📦 Sauvegarde Redis :", `partie:${code}:${pseudo}`, joueur);
     await redis.set(`partie:${code}:${pseudo}`, joueur);
     socket.join(code);
     socket.emit("partie_creee", { code, joueurs: [joueur] });
@@ -55,7 +54,6 @@ io.on("connection", (socket) => {
 
   socket.on("rejoindre_partie", async ({ code, pseudo }) => {
     const joueur = { id: socket.id, pseudo, code };
-    console.log("📦 Sauvegarde Redis :", `partie:${code}:${pseudo}`, joueur);
     await redis.set(`partie:${code}:${pseudo}`, joueur);
     socket.join(code);
     socket.emit("confirmation_rejoindre", { code, pseudo });
@@ -105,7 +103,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("lancer_partie", async (code) => {
-    console.log("📦 Sauvegarde Redis :", `partie:${code}:${pseudo}`, joueur);
     const keys = await redis.keys(`partie:${code}:*`);
     const joueurs = await Promise.all(keys.map(k => redis.get(k)));
 
