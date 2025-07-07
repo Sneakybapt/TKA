@@ -23,7 +23,6 @@ export default function Jeu() {
   const [notification, setNotification] = useState<NotificationData | null>(null);
 
   useEffect(() => {
-    // 🔧 Normalisation du pseudo au moment de la reconnexion
     const pseudo = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
     const code = localStorage.getItem("tka_code");
 
@@ -32,6 +31,11 @@ export default function Jeu() {
     } else {
       setEnChargement(false);
     }
+
+    socket.on("reconnexion_ok", ({ pseudo, code, mission, cible }) => {
+      setInfos({ pseudo, code, mission, cible });
+      setEnChargement(false);
+    });
 
     socket.on("partie_lancee", ({ pseudo, code, cible, mission }) => {
       localStorage.setItem("tka_pseudo", pseudo.trim().toLowerCase());
@@ -56,6 +60,7 @@ export default function Jeu() {
     });
 
     return () => {
+      socket.off("reconnexion_ok");
       socket.off("partie_lancee");
       socket.off("demande_validation");
       socket.off("victoire");

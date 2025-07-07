@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import socket from "../socket";
 import { useNavigate } from "react-router-dom";
 
@@ -6,17 +6,9 @@ export default function CreerPartie() {
   const [pseudo, setPseudo] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // 💡 Nettoyage du pseudo
-    const pseudoNettoye = pseudo.trim().toLowerCase();
-
-    // Émission de l'événement vers le serveur
-    socket.emit("creer_partie", { pseudo: pseudoNettoye });
-
-    // Attente de la réponse du serveur
-    socket.once("partie_creee", ({ code, joueurs }) => {
+  useEffect(() => {
+    socket.on("partie_creee", ({ code, joueurs }) => {
+      const pseudoNettoye = pseudo.trim().toLowerCase();
       console.log("Partie créée avec code :", code);
       localStorage.setItem("tka_pseudo", pseudoNettoye);
       localStorage.setItem("tka_code", code.toUpperCase());
@@ -30,6 +22,21 @@ export default function CreerPartie() {
         },
       });
     });
+
+    socket.on("erreur", (message) => {
+      alert(message);
+    });
+
+    return () => {
+      socket.off("partie_creee");
+      socket.off("erreur");
+    };
+  }, [navigate, pseudo]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const pseudoNettoye = pseudo.trim().toLowerCase();
+    socket.emit("creer_partie", { pseudo: pseudoNettoye });
   };
 
   return (

@@ -11,7 +11,6 @@ export default function SalleAttente() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 🔁 Fallback si location.state est vide (refresh ou accès direct)
   const state = location.state || {
     code: localStorage.getItem("tka_code")?.trim().toUpperCase(),
     pseudo: localStorage.getItem("tka_pseudo")?.trim().toLowerCase(),
@@ -23,14 +22,12 @@ export default function SalleAttente() {
   const [joueurs, setJoueurs] = useState<Joueur[]>(joueursInitiaux || []);
   const [readyToLaunch, setReadyToLaunch] = useState(false);
 
-  // 🚨 Sécurité en cas de données manquantes
   useEffect(() => {
     if (!code || !pseudo) {
       navigate("/rejoindre");
     }
   }, [code, pseudo, navigate]);
 
-  // 🔁 Tentative de reconnexion si refresh
   useEffect(() => {
     const pseudoLS = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
     const codeLS = localStorage.getItem("tka_code")?.trim().toUpperCase();
