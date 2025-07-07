@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import CreerPartie from "./pages/CreerPartie";
 import RejoindrePartie from "./pages/RejoindrePartie";
-import ReprendrePartie from "./pages/ReprendrePartie";
 import SalleAttente from "./pages/SalleAttente";
 import Jeu from "./pages/Jeu";
 import Victoire from "./pages/Victoire";
@@ -68,7 +67,6 @@ export default function App() {
         <Route path="/" element={<Accueil />} />
         <Route path="/creer" element={<CreerPartie />} />
         <Route path="/rejoindre" element={<RejoindrePartie />} />
-        <Route path="/reprendre" element={<ReprendrePartie />} />
         <Route path="/attente" element={<SalleAttente />} />
         <Route path="/jeu" element={<Jeu />} />
         <Route path="/victoire" element={<Victoire />} />
