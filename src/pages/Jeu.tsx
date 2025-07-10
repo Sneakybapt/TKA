@@ -22,6 +22,7 @@ export default function Jeu() {
   const [texteMission, setTexteMission] = useState("");
   const [notification, setNotification] = useState<NotificationData | null>(null);
   const [missionsChangees, setMissionsChangees] = useState(0); // ✅ compteur mission
+  const [missionValidee, setMissionValidee] = useState(false);
 
   useEffect(() => {
     const pseudo = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
@@ -135,23 +136,31 @@ export default function Jeu() {
         🕵️ <strong>Ta mission :</strong> <em>{infos.mission}</em>
       </p>
 
-      {/* ✅ Bouton Changer de mission */}
-      <button
-        disabled={missionsChangees >= 2}
-        onClick={handleChangerMission}
-        style={{
-          marginTop: "2.5rem",
-          padding: "0.75rem 1.5rem",
-          fontSize: "1rem",
-          backgroundColor: missionsChangees >= 2 ? "#444" : "rgba(0,128,128, 0.75)",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: missionsChangees >= 2 ? "not-allowed" : "pointer",
-        }}
-      >
-        ♻️ Changer de mission ({2 - missionsChangees} restant{missionsChangees === 1 ? "" : "s"})
-      </button>
+      {!missionValidee && (
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "1rem",
+          flexWrap: "wrap"
+        }}>
+          <button
+            disabled={missionsChangees >= 2}
+            onClick={handleChangerMission}
+            className="btn-relancermission"
+          >
+            ♻️ Changer de mission ({2 - missionsChangees} restant{missionsChangees === 1 ? "" : "s"})
+          </button>
+
+          <button
+            onClick={() => setMissionValidee(true)}
+            className="btn-retourmission"
+          >
+            ✅ Valider la mission
+          </button>
+        </div>
+      )}
+
+
       <div style={{ height: "1.5rem" }} />
 
       {notification && (

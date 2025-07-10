@@ -306,3 +306,25 @@ body {
   background-color: #000000;
 }
 
+.btn-relancermission {
+  background-color: rgba(0,128,128, 0.75);
+  color: #f2f2f2;
+  padding: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1rem;
+  backdrop-filter: blur(2px);
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.0);
+}
+
+.btn-retourmission {
+  padding: 0.75rem 1.5rem;
+  background-color: rgba(26, 26, 26, 0.8);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  text-align: center;
+}
