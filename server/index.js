@@ -205,6 +205,22 @@ io.on("connection", (socket) => {
     delete eliminationsEnAttente[cible];
   });
 
+  socket.on("demande_survivants", async ({ code }) => {
+    const keys = await redis.keys(`partie:${code}:*`);
+    const tous = await Promise.all(keys.map(k => redis.get(k)));
+
+    const vivants = tous.filter(joueur => !joueur.elimine);
+
+    io.to(socket.id).emit("liste_survivants", vivants.map(j => ({
+      pseudo: j.pseudo,
+      cible: j.cible,
+      mission: j.mission
+    })));
+
+    console.log(`👻 Survivants envoyés à ${socket.id} pour la partie ${code}`);
+  });
+
+
   socket.on("demande_nouvelle_mission", async ({ pseudo, code }) => {
     const joueur = await redis.get(`partie:${code}:${pseudo}`);
     if (!joueur) return;

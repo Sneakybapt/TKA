@@ -6,6 +6,7 @@ import Jeu from "./pages/Jeu";
 import Victoire from "./pages/Victoire";
 import { Navigate } from "react-router-dom";
 import "./themesombre.css"; // 💡 ton fichier de thème global
+import Elimine from "./pages/Elimine"; // ou le nom que tu choisis
 
 function Accueil() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/jeu" element={<Jeu />} />
         <Route path="/victoire" element={<Victoire />} />
         <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/elimine" element={<Elimine />} />
       </Routes>
     </BrowserRouter>
   );

@@ -109,7 +109,7 @@ export default function Jeu() {
     });
 
     setNotification(null);
-    navigate("/");
+    navigate("/elimine");
   };
 
   if (enChargement) {
@@ -127,12 +127,12 @@ export default function Jeu() {
 
   return (
     <div style={{ padding: "3rem" }}>
-      <h2>Bienvenue <strong>{infos.pseudo}</strong> !</h2>
+      <h2>Bienvenue {infos.pseudo} !</h2>
       <p style={{ fontSize: "1.2rem" }}>
-        🎯 Ta cible : <strong>{infos.cible}</strong>
+        🎯 <strong>Ta cible : </strong>{infos.cible}
       </p>
       <p style={{ fontSize: "1.2rem" }}>
-        🕵️ Ta mission : <em>{infos.mission}</em>
+        🕵️ <strong>Ta mission :</strong> <em>{infos.mission}</em>
       </p>
 
       {/* ✅ Bouton Changer de mission */}
