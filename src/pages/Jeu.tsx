@@ -21,6 +21,7 @@ export default function Jeu() {
   const [modeValidation, setModeValidation] = useState(false);
   const [texteMission, setTexteMission] = useState("");
   const [notification, setNotification] = useState<NotificationData | null>(null);
+  const [missionsChangees, setMissionsChangees] = useState(0); // ✅ compteur mission
 
   useEffect(() => {
     const pseudo = localStorage.getItem("tka_pseudo")?.trim().toLowerCase();
@@ -39,7 +40,6 @@ export default function Jeu() {
       setEnChargement(false);
     };
 
-
     socket.on("reconnexion_ok", handleReception);
     socket.on("partie_lancee", handleReception);
 
@@ -49,6 +49,11 @@ export default function Jeu() {
 
     socket.on("victoire", () => {
       navigate("/victoire");
+    });
+
+    socket.on("nouvelle_mission", ({ mission }) => {
+      setInfos((prev) => prev ? { ...prev, mission } : prev);
+      setMissionsChangees((count) => count + 1);
     });
 
     socket.on("erreur", (msg) => {
@@ -62,6 +67,7 @@ export default function Jeu() {
       socket.off("demande_validation");
       socket.off("victoire");
       socket.off("erreur");
+      socket.off("nouvelle_mission");
     };
   }, [navigate]);
 
@@ -81,6 +87,16 @@ export default function Jeu() {
     setModeValidation(false);
     setTexteMission("");
     alert("Mission envoyée à ta cible. En attente de sa validation 👀");
+  };
+
+  const handleChangerMission = () => {
+    if (infos) {
+      console.log("📡 Demande de changement de mission envoyée");
+      socket.emit("demande_nouvelle_mission", {
+        pseudo: infos.pseudo,
+        code: infos.code
+      });
+    }
   };
 
   const handleValidationElimination = () => {
@@ -112,15 +128,36 @@ export default function Jeu() {
   return (
     <div style={{ padding: "3rem" }}>
       <h2>Bienvenue <strong>{infos.pseudo}</strong> !</h2>
-      <p style={{fontSize : "1.2rem"}}>
+      <p style={{ fontSize: "1.2rem" }}>
         🎯 Ta cible : <strong>{infos.cible}</strong>
-        </p>
-      <p style={{fontSize : "1.2rem"}}>
+      </p>
+      <p style={{ fontSize: "1.2rem" }}>
         🕵️ Ta mission : <em>{infos.mission}</em>
-        </p>
+      </p>
+
+      {/* ✅ Bouton Changer de mission */}
+      <button
+        disabled={missionsChangees >= 2}
+        onClick={handleChangerMission}
+        style={{
+          marginTop: "1rem",
+          padding: "0.75rem 1.5rem",
+          fontSize: "1rem",
+          backgroundColor: missionsChangees >= 2 ? "#444" : "rgba(0,128,128, 0.75)",
+          color: "white",
+          border: "none",
+          borderRadius: "4px",
+          cursor: missionsChangees >= 2 ? "not-allowed" : "pointer",
+        }}
+      >
+        ♻️ Changer de mission ({2 - missionsChangees} restant{missionsChangees === 1 ? "" : "s"})
+      </button>
 
       {notification && (
-        <div style={{ marginTop: "2rem", color: "white", border:"1px dashed #b22222", padding: "1rem", backgroundColor: "rgba(178, 34, 34, 0.30)" }}>
+        <div style={{
+          marginTop: "2rem", color: "white", border: "1px dashed #b22222",
+          padding: "1rem", backgroundColor: "rgba(178, 34, 34, 0.30)"
+        }}>
           <p><strong>{notification.tueur}</strong> t’a ciblé avec cette mission :</p>
           <blockquote>{notification.message}</blockquote>
           <button
@@ -135,7 +172,7 @@ export default function Jeu() {
               cursor: "pointer",
             }}
           >
-          🚫 J’ai été éliminé
+            🚫 J’ai été éliminé
           </button>
         </div>
       )}
