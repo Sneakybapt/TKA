@@ -227,7 +227,7 @@ body {
 
 
 .elimine-container {
-  background-color: rgba(26, 26, 26, 0.5);
+  background-color: rgba(26, 26, 26, 0.0);
   color: #f0f0f0;
   padding: 3rem;
   text-align: center;
@@ -248,22 +248,61 @@ body {
 }
 
 .fantome-carte {
-  background-color: rgba(26, 26, 26, 0.75);
+  background-color: rgba(26, 26, 26, 0.5);
   padding: 1rem;
   border-radius: 8px;
   text-align: left;
 }
 
-.btn-retour {
+
+
+.btn-retour:hover {
+  background-color: #555;
+}
+
+.elimine-subtitle {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  color: #ccc;
+}
+
+.fantome-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.fantome-carte {
+  background-color: rgba(26, 26, 26, 0.5);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.elimine-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem; /* ✅ espace entre les boutons */
+  margin-top: 2rem;
+  flex-wrap: wrap; /* permet de s’adapter si trop étroit */
+}
+
+.btn-retour,
+.btn-fantome {
   padding: 0.75rem 1.5rem;
-  background-color: rgba(26, 26, 26, 0.75);
+  background-color: rgba(26, 26, 26, 0.8);
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 1rem;
+  min-width: 140px;
+  text-align: center;
 }
 
-.btn-retour:hover {
-  background-color: #555;
+.btn-retour:hover,
+.btn-fantome:hover {
+  background-color: #000000;
 }
+

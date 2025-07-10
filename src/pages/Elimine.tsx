@@ -9,13 +9,17 @@ interface Joueur {
 
 export default function Elimine() {
   const [vivants, setVivants] = useState<Joueur[]>([]);
+  const [modeFantomeActive, setModeFantomeActive] = useState(false);
 
-  useEffect(() => {
+  const handleActiverModeFantome = () => {
     const code = localStorage.getItem("tka_code");
     if (code) {
       socket.emit("demande_survivants", { code });
     }
+    setModeFantomeActive(true);
+  };
 
+  useEffect(() => {
     socket.on("liste_survivants", (data: Joueur[]) => {
       setVivants(data);
     });
@@ -25,24 +29,47 @@ export default function Elimine() {
     };
   }, []);
 
-    return (
-    <div className="elimine-container">
+return (
+  <div className="elimine-container">
     <h1>☠️ Tu as été éliminé</h1>
-    <p className="elimine-subtitle">Mais tu peux observer la partie comme un agent fantôme...</p>
+    {!modeFantomeActive ? (
+      <>
+        <p className="elimine-subtitle">
+          L’opération se poursuit… mais tu peux encore observer silencieusement.
+        </p>
 
-    <div className="fantome-liste">
-        {vivants.map(({ pseudo, cible, mission }) => (
-        <div key={pseudo} className="fantome-carte">
-            <p><strong>{pseudo}</strong> ➜ <strong>{cible}</strong></p>
-            <p>🕵️ Mission : <em>{mission}</em></p>
+        {/* ✅ BOUTONS SUR LA MÊME LIGNE */}
+        <div className="elimine-actions">
+          <button className="btn-retour" onClick={() => window.location.href = "/"}>
+            🔙 Retourner au salon
+          </button>
+
+          <button className="btn-fantome" onClick={handleActiverModeFantome}>
+            👻 Activer le mode fantôme
+          </button>
         </div>
-        ))}
-    </div>
+      </>
+    ) : (
+      <>
+        <p className="elimine-subtitle">
+          👁️ Espionnage en cours… voici les agents encore en mission :
+        </p>
 
-    <button className="btn-retour" onClick={() => window.location.href = "/"}>
-        Retourner à l’accueil
-    </button>
-    </div>
-    );
+        <div className="fantome-liste">
+          {vivants.map(({ pseudo, cible, mission }) => (
+            <div key={pseudo} className="fantome-carte">
+              <p><strong>{pseudo}</strong> ➜ <strong>{cible}</strong></p>
+              <p>🕵️ Mission : <em>{mission}</em></p>
+            </div>
+          ))}
+        </div>
+
+        <button className="btn-retour" onClick={() => window.location.href = "/"}>
+          🔙 Retourner au salon
+        </button>
+      </>
+    )}
+  </div>
+);
 
 }
