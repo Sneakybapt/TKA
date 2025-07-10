@@ -40,7 +40,7 @@ export default function Elimine() {
     </div>
 
     <button className="btn-retour" onClick={() => window.location.href = "/"}>
-        🔙 Retourner à l’accueil
+        Retourner à l’accueil
     </button>
     </div>
     );

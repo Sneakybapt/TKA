@@ -248,7 +248,7 @@ body {
 }
 
 .fantome-carte {
-  background-color: #333;
+  background-color: rgba(26, 26, 26, 0.75);
   padding: 1rem;
   border-radius: 8px;
   text-align: left;
@@ -256,7 +256,7 @@ body {
 
 .btn-retour {
   padding: 0.75rem 1.5rem;
-  background-color: #444;
+  background-color: rgba(26, 26, 26, 0.75);
   color: white;
   border: none;
   border-radius: 6px;
