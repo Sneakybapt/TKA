@@ -10,21 +10,22 @@ import "./themesombre.css"; // 💡 ton fichier de thème global
 function Accueil() {
   const navigate = useNavigate();
 
-  return (
-    <div className="accueil-container">
-      <h1 className="accueil-title">Killer · Le Jeu</h1>
-      <p className="accueil-subtitle">
-        Éliminez votre cible. Soyez discret. Survivez.
-      </p>
+return (
+  <div className="accueil-container">
+    <h1 className="accueil-title">Killer · Le Jeu</h1>
+    <p className="accueil-subtitle">
+      Éliminez votre cible. Soyez discret. Survivez.
+    </p>
 
-      <button className="accueil-button" onClick={() => navigate("/creer")}>
-        Créer une partie
-      </button>
-      <button className="accueil-button" onClick={() => navigate("/rejoindre")}>
-        Rejoindre une partie
-      </button>
-    </div>
-  );
+    <button className="accueil-button" onClick={() => navigate("/creer")}>
+      Créer une partie
+    </button>
+    <button className="accueil-button" onClick={() => navigate("/rejoindre")}>
+      Rejoindre une partie
+    </button>
+  </div>
+);
+
 }
 
 export default function App() {

@@ -140,7 +140,7 @@ export default function Jeu() {
         disabled={missionsChangees >= 2}
         onClick={handleChangerMission}
         style={{
-          marginTop: "1rem",
+          marginTop: "2.5rem",
           padding: "0.75rem 1.5rem",
           fontSize: "1rem",
           backgroundColor: missionsChangees >= 2 ? "#444" : "rgba(0,128,128, 0.75)",
@@ -152,6 +152,7 @@ export default function Jeu() {
       >
         ♻️ Changer de mission ({2 - missionsChangees} restant{missionsChangees === 1 ? "" : "s"})
       </button>
+      <div style={{ height: "1.5rem" }} />
 
       {notification && (
         <div style={{
