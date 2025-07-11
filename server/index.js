@@ -23,7 +23,10 @@ app.post("/api/inscription", async (req, res) => {
     }
 
     const newUser = new User({ pseudo, motdepasse });
+    console.log("📨 Sauvegarde du nouvel utilisateur :", pseudo);
     await newUser.save();
+    console.log("✅ Enregistrement terminé");
+
 
     res.json({ ok: true, message: "Profil créé avec succès" });
   } catch (error) {
@@ -36,7 +39,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-const MONGO_URI = "mongodb+srv://baptistegaquiere:ivnyXAeYWdng2HwY@clusterthekiller.vclykcy.mongodb.net/?retryWrites=true&w=majority&appName=ClusterTheKiller";
+const MONGO_URI = "mongodb+srv://baptistegaquiere:ivnyXAeYWdng2HwY@clusterthekiller.vclykcy.mongodb.net/Killergame?retryWrites=true&w=majority&appName=ClusterTheKiller";
 
 
 mongoose.connect(MONGO_URI)
