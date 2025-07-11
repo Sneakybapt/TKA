@@ -4,9 +4,19 @@ import { Server } from "socket.io";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import mongoose from "mongoose";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+
+const MONGO_URI = "mongodb+srv://baptistegaquiere:ivnyXAeYWdng2HwY@clusterthekiller.vclykcy.mongodb.net/?retryWrites=true&w=majority&appName=ClusterTheKiller";
+
+
+mongoose.connect(MONGO_URI)
+.then(() => console.log("✅ Connexion à MongoDB réussie"))
+.catch(err => console.error("❌ Erreur MongoDB :", err));
+
 
 const redis = new Redis({
   url: "https://workable-glider-46770.upstash.io",
