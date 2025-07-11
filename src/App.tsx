@@ -7,27 +7,38 @@ import Victoire from "./pages/Victoire";
 import { Navigate } from "react-router-dom";
 import "./themesombre.css"; // 💡 ton fichier de thème global
 import Elimine from "./pages/Elimine"; // ou le nom que tu choisis
+import Inscritpion from "./pages/Inscription";
 
 function Accueil() {
   const navigate = useNavigate();
 
-return (
-  <div className="accueil-container">
-    <h1 className="accueil-title">Killer · Le Jeu</h1>
-    <p className="accueil-subtitle">
-      Éliminez votre cible. Soyez discret. Survivez.
-    </p>
+  return (
+    <div className="accueil-container">
+      {/* ✅ Barre en haut à droite */}
+      <div className="profil-bar">
+        <button className="profil-button" onClick={() => navigate("/inscription")}>
+          🧑‍💼 Créer un profil
+        </button>
+        <button className="profil-button" onClick={() => navigate("/connexion")}>
+          🔐 Connexion
+        </button>
+      </div>
 
-    <button className="accueil-button" onClick={() => navigate("/creer")}>
-      Créer une partie
-    </button>
-    <button className="accueil-button" onClick={() => navigate("/rejoindre")}>
-      Rejoindre une partie
-    </button>
-  </div>
-);
+      <h1 className="accueil-title">Killer · Le Jeu</h1>
+      <p className="accueil-subtitle">
+        Éliminez votre cible. Soyez discret. Survivez.
+      </p>
 
+      <button className="accueil-button" onClick={() => navigate("/creer")}>
+        Créer une partie
+      </button>
+      <button className="accueil-button" onClick={() => navigate("/rejoindre")}>
+        Rejoindre une partie
+      </button>
+    </div>
+  );
 }
+
 
 export default function App() {
   return (
@@ -41,6 +52,7 @@ export default function App() {
         <Route path="/victoire" element={<Victoire />} />
         <Route path="*" element={<Navigate to="/" />} />
         <Route path="/elimine" element={<Elimine />} />
+        <Route path="/inscription" element={<Inscritpion />} />
       </Routes>
     </BrowserRouter>
   );

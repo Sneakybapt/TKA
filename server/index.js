@@ -5,6 +5,32 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
+import User from "./models/User.js";
+import express from "express";
+import bodyParser from "body-parser"; // pour parser le JSON du frontend
+
+const app = express();
+app.use(bodyParser.json()); // ou app.use(express.json());
+
+app.post("/api/inscription", async (req, res) => {
+  const { pseudo, motdepasse } = req.body;
+
+  try {
+    const existingUser = await User.findOne({ pseudo });
+
+    if (existingUser) {
+      return res.status(400).json({ ok: false, message: "Pseudo déjà pris" });
+    }
+
+    const newUser = new User({ pseudo, motdepasse });
+    await newUser.save();
+
+    res.json({ ok: true, message: "Profil créé avec succès" });
+  } catch (error) {
+    console.error("❌ Erreur lors de l'inscription :", error);
+    res.status(500).json({ ok: false, message: "Erreur serveur" });
+  }
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,7 +61,8 @@ try {
 }
 
 const eliminationsEnAttente = {};
-const server = http.createServer();
+const server = http.createServer(app); // Express + Socket.IO
+
 const io = new Server(server, {
   cors: {
     origin: "*",
