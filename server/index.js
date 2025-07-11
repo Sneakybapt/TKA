@@ -10,7 +10,7 @@ import express from "express";
 import bodyParser from "body-parser"; // pour parser le JSON du frontend
 
 const app = express();
-app.use(express.json()); // ou app.use(express.json());
+app.use(bodyParser.json()); // ou app.use(express.json());
 
 app.post("/api/inscription", async (req, res) => {
   const { pseudo, motdepasse } = req.body;
