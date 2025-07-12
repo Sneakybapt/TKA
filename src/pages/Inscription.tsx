@@ -10,7 +10,7 @@ export default function Inscription() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const res = await fetch(`${API_BASE_URL}/api/connexion`, {
+    const res = await fetch(`${API_BASE_URL}/api/inscription`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pseudo, motdepasse })
