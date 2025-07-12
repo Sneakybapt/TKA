@@ -37,7 +37,9 @@ app.post("/api/inscription", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(motdepasse, 10); // ✅ hash sécurisé
+    console.log("🔐 Mot de passe hashé :", hashedPassword);
     const newUser = new User({ pseudo, motdepasse: hashedPassword });
+    console.log("✅ Utilisateur enregistré :", newUser);
 
     console.log("📨 Sauvegarde du nouvel utilisateur :", pseudo);
     await newUser.save();
@@ -58,6 +60,7 @@ app.post("/api/connexion", async (req, res) => {
     if (!user) {
       return res.status(404).json({ ok: false, message: "Profil introuvable" });
     }
+    console.log("🔍 Mot de passe en base :", user.motdepasse);
 
     const match = await bcrypt.compare(motdepasse, user.motdepasse); // ✅ comparaison sécurisée
     if (!match) {
