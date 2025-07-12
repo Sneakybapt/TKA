@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config"; // ✅ import
 
 export default function Inscription() {
   const [pseudo, setPseudo] = useState("");
@@ -9,7 +10,7 @@ export default function Inscription() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const res = await fetch("http://localhost:3000/api/inscription", {
+    const res = await fetch(`${API_BASE_URL}/api/connexion`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pseudo, motdepasse })

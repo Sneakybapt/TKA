@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../config"; // ✅ import dynamique
 
 interface StatsProfil {
   nbParties: number;
@@ -11,10 +12,17 @@ export default function Profil() {
 
   useEffect(() => {
     async function fetchStats() {
-      const res = await fetch(`http://localhost:3000/api/profil-stats?pseudo=${pseudo}`);
-      const data = await res.json();
-      setStats(data);
+      if (!pseudo) return;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/profil-stats?pseudo=${pseudo}`);
+        const data = await res.json();
+        setStats(data);
+      } catch (error) {
+        console.error("❌ Erreur lors du chargement du profil :", error);
+      }
     }
+
     fetchStats();
   }, [pseudo]);
 

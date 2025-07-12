@@ -14,7 +14,7 @@ import bcrypt from "bcrypt";
 
 const app = express();
 app.use(cors({
-  origin: "http://localhost:5173", // ✅ autorise ton frontend
+  origin:  ["http://localhost:5173", "https://the-killer.onrender.com"], // ✅ autorise ton frontend
   credentials: true
 }));
 app.use(bodyParser.json()); // ou app.use(express.json());
