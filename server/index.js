@@ -7,17 +7,25 @@ import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import User from "./models/User.js";
 import express from "express";
-import bodyParser from "body-parser"; // pour parser le JSON du frontend
 import cors from "cors";
 import bcrypt from "bcrypt";
 
-
 const app = express();
+
+// ✅ Détection dynamique de l’environnement
+const FRONTEND_URL = process.env.NODE_ENV === "production"
+  ? "https://the-killer-game-9hvh.onrender.com" // 🔁 ton frontend Render
+  : "http://localhost:5173";
+
+// ✅ Middleware CORS
 app.use(cors({
-  origin:  ["http://localhost:5173", "https://the-killer.onrender.com"], // ✅ autorise ton frontend
+  origin: FRONTEND_URL,
   credentials: true
 }));
-app.use(bodyParser.json()); // ou app.use(express.json());
+
+// ✅ Middleware JSON moderne
+app.use(express.json());
+
 
 app.post("/api/inscription", async (req, res) => {
   const { pseudo, motdepasse } = req.body;
