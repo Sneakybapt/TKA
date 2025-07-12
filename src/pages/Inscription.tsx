@@ -19,7 +19,7 @@ export default function Inscription() {
 
     if (data.ok) {
       localStorage.setItem("pseudo", pseudo);
-      navigate("/jeu");
+      navigate("/");
     } else {
       alert(data.message);
     }
@@ -28,6 +28,10 @@ export default function Inscription() {
   return (
     <div className="creer-container">
       <h2 className="creer-title">🧑‍💼 Créer ton profil</h2>
+      <div className="consignes-box">
+        ⚠️ <strong>Consignes :</strong> Le pseudo ne doit contenir <u>aucune majuscule</u>.
+      </div>
+
       <form className="creer-form" onSubmit={handleSubmit}>
         <input
           type="text"

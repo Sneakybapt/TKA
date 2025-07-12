@@ -47,7 +47,7 @@ function Accueil() {
           if (pseudo) {
             localStorage.setItem("tka_pseudo", pseudo);      // ✅ stockage correct
             localStorage.setItem("tka_createur", "true");    // ✅ joueur est créateur
-            navigate("/attente");                            // ✅ direction salle d’attente
+            navigate("/creer");                          
           } else {
             navigate("/creer");                              // 👤 pas connecté → entre son pseudo
           }

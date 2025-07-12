@@ -4,8 +4,12 @@ import { useNavigate } from "react-router-dom";
 import "../themesombre.css";
 
 export default function CreerPartie() {
-  const [pseudo, setPseudo] = useState("");
   const navigate = useNavigate();
+
+  const pseudoConnecte = localStorage.getItem("pseudo")?.trim().toLowerCase();
+  const estConnecte = !!pseudoConnecte;
+
+  const [pseudo, setPseudo] = useState(pseudoConnecte || "");
 
   useEffect(() => {
     socket.on("partie_creee", ({ code, joueurs }) => {
@@ -51,6 +55,7 @@ export default function CreerPartie() {
           onChange={(e) => setPseudo(e.target.value)}
           placeholder="Votre pseudo"
           required
+          disabled={estConnecte} // ✅ désactivé si connecté
         />
         <button type="submit" className="accueil-button">
           Créer la partie

@@ -8,8 +8,15 @@ import mongoose from "mongoose";
 import User from "./models/User.js";
 import express from "express";
 import bodyParser from "body-parser"; // pour parser le JSON du frontend
+import cors from "cors";
+import bcrypt from "bcrypt";
+
 
 const app = express();
+app.use(cors({
+  origin: "http://localhost:5173", // ✅ autorise ton frontend
+  credentials: true
+}));
 app.use(bodyParser.json()); // ou app.use(express.json());
 
 app.post("/api/inscription", async (req, res) => {
@@ -17,16 +24,16 @@ app.post("/api/inscription", async (req, res) => {
 
   try {
     const existingUser = await User.findOne({ pseudo });
-
     if (existingUser) {
       return res.status(400).json({ ok: false, message: "Pseudo déjà pris" });
     }
 
-    const newUser = new User({ pseudo, motdepasse });
+    const hashedPassword = await bcrypt.hash(motdepasse, 10); // ✅ hash sécurisé
+    const newUser = new User({ pseudo, motdepasse: hashedPassword });
+
     console.log("📨 Sauvegarde du nouvel utilisateur :", pseudo);
     await newUser.save();
     console.log("✅ Enregistrement terminé");
-
 
     res.json({ ok: true, message: "Profil créé avec succès" });
   } catch (error) {
@@ -34,6 +41,29 @@ app.post("/api/inscription", async (req, res) => {
     res.status(500).json({ ok: false, message: "Erreur serveur" });
   }
 });
+
+app.post("/api/connexion", async (req, res) => {
+  const { pseudo, motdepasse } = req.body;
+
+  try {
+    const user = await User.findOne({ pseudo });
+    if (!user) {
+      return res.status(404).json({ ok: false, message: "Profil introuvable" });
+    }
+
+    const match = await bcrypt.compare(motdepasse, user.motdepasse); // ✅ comparaison sécurisée
+    if (!match) {
+      return res.status(401).json({ ok: false, message: "Mot de passe incorrect" });
+    }
+
+    console.log(`✅ Connexion réussie pour ${pseudo}`);
+    res.json({ ok: true, message: "Connexion réussie" });
+  } catch (error) {
+    console.error("❌ Erreur lors de la connexion :", error);
+    res.status(500).json({ ok: false, message: "Erreur serveur" });
+  }
+});
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
