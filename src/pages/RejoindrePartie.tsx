@@ -4,9 +4,13 @@ import { useNavigate } from "react-router-dom";
 import "../themesombre.css";
 
 export default function RejoindrePartie() {
-  const [pseudo, setPseudo] = useState("");
-  const [code, setCode] = useState("");
   const navigate = useNavigate();
+
+  const pseudoConnecte = localStorage.getItem("pseudo")?.trim();
+  const estConnecte = !!pseudoConnecte;
+
+  const [pseudo, setPseudo] = useState(pseudoConnecte || "");
+  const [code, setCode] = useState("");
 
   useEffect(() => {
     socket.on("confirmation_rejoindre", () => {
@@ -61,6 +65,7 @@ export default function RejoindrePartie() {
           value={pseudo}
           onChange={(e) => setPseudo(e.target.value)}
           required
+          disabled={estConnecte} // ✅ désactivé si connecté
         />
         <input
           type="text"

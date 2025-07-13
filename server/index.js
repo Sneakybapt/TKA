@@ -9,6 +9,7 @@ import User from "./models/User.js";
 import express from "express";
 import cors from "cors";
 import bcrypt from "bcrypt";
+import Game from "./models/Game.js"; 
 
 const app = express();
 
@@ -43,6 +44,8 @@ app.post("/api/inscription", async (req, res) => {
 
     console.log("📨 Sauvegarde du nouvel utilisateur :", pseudo);
     await newUser.save();
+    const userEnBase = await User.findById(newUser._id);
+    console.log("🔍 Vérification post-save :", userEnBase);
     console.log("✅ Enregistrement terminé");
 
     res.json({ ok: true, message: "Profil créé avec succès" });
@@ -56,13 +59,19 @@ app.post("/api/connexion", async (req, res) => {
   const { pseudo, motdepasse } = req.body;
 
   try {
+    console.log("🔍 Connexion reçue :", { pseudo, motdepasse });
+
     const user = await User.findOne({ pseudo });
     if (!user) {
+      console.log("❌ Profil introuvable");
       return res.status(404).json({ ok: false, message: "Profil introuvable" });
     }
-    console.log("🔍 Mot de passe en base :", user.motdepasse);
 
-    const match = await bcrypt.compare(motdepasse, user.motdepasse); // ✅ comparaison sécurisée
+    console.log("🔐 Mot de passe en base :", user.motdepasse);
+
+    const match = await bcrypt.compare(motdepasse, user.motdepasse);
+    console.log("✅ Résultat comparaison :", match);
+
     if (!match) {
       return res.status(401).json({ ok: false, message: "Mot de passe incorrect" });
     }
@@ -71,6 +80,49 @@ app.post("/api/connexion", async (req, res) => {
     res.json({ ok: true, message: "Connexion réussie" });
   } catch (error) {
     console.error("❌ Erreur lors de la connexion :", error);
+    res.status(500).json({ ok: false, message: "Erreur serveur" });
+  }
+});
+
+app.post("/api/enregistrer-partie", async (req, res) => {
+  const { code, classement } = req.body;
+
+  if (!Array.isArray(classement) || classement.length === 0) {
+    return res.status(400).json({ ok: false, message: "Classement invalide" });
+  }
+
+  try {
+    const nouvellePartie = new Game({
+      code,
+      joueurs: classement.map(joueur => ({
+        pseudo: joueur.pseudo,
+        position: joueur.position
+      }))
+    });
+
+    await nouvellePartie.save();
+    res.json({ ok: true, message: "Partie enregistrée" });
+  } catch (error) {
+    console.error("❌ Erreur enregistrement partie :", error);
+    res.status(500).json({ ok: false, message: "Erreur serveur" });
+  }
+});
+
+
+app.get("/api/profil-stats", async (req, res) => {
+  const pseudo = req.query.pseudo;
+
+  try {
+    const parties = await Game.find({ "joueurs.pseudo": pseudo });
+
+    const nbParties = parties.length;
+    const nbVictoires = parties.filter(p =>
+      p.joueurs.find(j => j.pseudo === pseudo && j.position === 1)
+    ).length;
+
+    res.json({ nbParties, nbVictoires });
+  } catch (error) {
+    console.error("❌ Erreur stats profil :", error);
     res.status(500).json({ ok: false, message: "Erreur serveur" });
   }
 });
@@ -324,6 +376,22 @@ io.on("connection", (socket) => {
     io.to(joueur.id).emit("nouvelle_mission", { mission: nouvelleMission });
     console.log(`🔁 Nouvelle mission envoyée à ${pseudo}`);
   });
+
+    socket.on("joueur_elimine", (pseudoElimine) => {
+    // ✅ Récupère la liste actuelle
+    const elimines = JSON.parse(localStorage.getItem("tka_elimines") || "[]");
+
+    // ✅ Calcule la position d’élimination
+    const position = elimines.length + 2; // +1 pour index, +1 car le gagnant sera position 1
+
+    // ✅ Ajoute le joueur avec sa position
+    elimines.push({ pseudo: pseudoElimine, position });
+
+    // ✅ Sauvegarde dans localStorage
+    localStorage.setItem("tka_elimines", JSON.stringify(elimines));
+    console.log("📦 Éliminé :", pseudoElimine, "→ position", position);
+  });
+
 
   socket.on("disconnect", async () => {
     const keys = await redis.keys("partie:*:*");

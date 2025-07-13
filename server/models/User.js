@@ -8,11 +8,7 @@ const userSchema = new mongoose.Schema({
   positions: { type: [String], default: [] }
 });
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("motdepasse")) return next();
-  this.motdepasse = await bcrypt.hash(this.motdepasse, 10);
-  next();
-});
+
 
 const User = mongoose.model("User", userSchema);
 export default User;

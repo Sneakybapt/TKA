@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { API_BASE_URL } from "../config"; // ✅ import dynamique
+import { API_BASE_URL } from "../config";
 
 interface StatsProfil {
   nbParties: number;
+  nbVictoires: number;
   moyennePlace: string;
 }
 
@@ -32,6 +33,7 @@ export default function Profil() {
     <div className="creer-container">
       <h2 className="creer-title">👤 Fiche de {pseudo}</h2>
       <p>🎮 Parties jouées : {stats.nbParties}</p>
+      <p>🏆 Parties gagnées : {stats.nbVictoires}</p>
       <p>📊 Place moyenne (hors élimination) : {stats.moyennePlace}</p>
     </div>
   );
