@@ -9,6 +9,24 @@ import User from "./models/User.js";
 import express from "express";
 import bodyParser from "body-parser"; // pour parser le JSON du frontend
 
+import cors from "cors";
+
+  const whitelist = [
+    "https://the-killer-game-9hvh.onrender.com",
+    "http://localhost:5173"
+  ];
+
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (!origin || whitelist.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("❌ CORS bloqué : " + origin));
+      }
+    },
+    credentials: true
+  }));
+
 const app = express();
 app.use(bodyParser.json()); // ou app.use(express.json());
 
