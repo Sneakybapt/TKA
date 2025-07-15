@@ -6,19 +6,35 @@ import "../themesombre.css";
 
 export default function Victoire() {
   const navigate = useNavigate();
-  const setClassement = useState<{ pseudo: string; position: number }[]>([])[1];
+  const [classement, setClassement] = useState<{ pseudo: string; position: number }[]>([]);
 
   useEffect(() => {
     const dejaEnregistre = localStorage.getItem("tka_partie_enregistree");
     if (dejaEnregistre === "true") return;
 
+    console.log("🕵️ Attente du classement final...");
+
     socket.on("classement_final", (classementRecu) => {
       console.log("📦 Classement reçu :", classementRecu);
 
+      const pseudo = localStorage.getItem("tka_pseudo");
       const code = localStorage.getItem("tka_code");
-      localStorage.setItem("tka_partie_enregistree", "true");
 
-      setClassement(classementRecu); // ✅ pour affichage si tu veux
+      type JoueurClassement = { pseudo: string; position: number };
+
+      const estGagnant = classementRecu.find((j: JoueurClassement) =>
+        j.pseudo === pseudo && j.position === 1
+      );
+
+
+      if (!estGagnant) {
+        console.warn("⚠️ Ce joueur n'est pas le gagnant, pas d'enregistrement.");
+        return;
+      }
+
+      localStorage.setItem("tka_partie_enregistree", "true");
+      setClassement(classementRecu);
+
       console.log("📡 Envoi fetch vers /api/enregistrer-partie :", { code, classement: classementRecu });
 
       fetch(`${API_BASE_URL}/api/enregistrer-partie`, {
@@ -58,6 +74,20 @@ export default function Victoire() {
       <p className="victoire-subtext">
         Tes stats ont été enregistrées. Tu peux les consulter dans ton profil.
       </p>
+
+      {classement.length > 0 && (
+        <div className="classement-final">
+          <h2>📊 Classement final</h2>
+          <ul>
+            {classement.map(({ pseudo, position }: { pseudo: string; position: number }) => (
+              <li key={pseudo}>
+                {position === 1 ? "🥇" : `#${position}`} {pseudo}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
 
       <button className="accueil-button" onClick={handleRetourAccueil}>
         🔙 Retour à l’accueil

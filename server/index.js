@@ -362,6 +362,7 @@ io.on("connection", (socket) => {
       }));
 
       classement.push({ pseudo: survivant.pseudo, position: 1 });
+      console.log("📡 Envoi classement_final à :", survivant.id);
 
       io.to(survivant.id).emit("classement_final", classement);
       console.log(`🏆 ${survivant.pseudo} a gagné la partie ${code}`);
