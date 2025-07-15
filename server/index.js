@@ -8,8 +8,9 @@ import mongoose from "mongoose";
 import User from "./models/User.js";
 import express from "express";
 import bodyParser from "body-parser"; // pour parser le JSON du frontend
-
 import cors from "cors";
+
+const app = express();
 
   const whitelist = [
     "https://the-killer-game-9hvh.onrender.com",
@@ -27,7 +28,6 @@ import cors from "cors";
     credentials: true
   }));
 
-const app = express();
 app.use(bodyParser.json()); // ou app.use(express.json());
 
 app.post("/api/inscription", async (req, res) => {
