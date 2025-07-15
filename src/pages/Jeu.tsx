@@ -48,6 +48,23 @@ export default function Jeu() {
       setNotification({ tueur, message });
     });
 
+    socket.on("joueur_elimine", (pseudoElimine) => {
+      console.log("📡 joueur_elimine reçu :", pseudoElimine);
+      const elimines: { pseudo: string; position: number }[] =
+        JSON.parse(localStorage.getItem("tka_elimines") || "[]");
+
+      if (elimines.some(j => j.pseudo === pseudoElimine)) return;
+
+      const position = elimines.length + 2;
+      elimines.push({ pseudo: pseudoElimine, position });
+
+      localStorage.setItem("tka_elimines", JSON.stringify(elimines));
+      console.log("📦 Éliminé enregistré :", pseudoElimine, "→", position);
+    });
+
+
+
+
     socket.on("victoire", () => {
       navigate("/victoire");
     });
@@ -69,6 +86,7 @@ export default function Jeu() {
       socket.off("victoire");
       socket.off("erreur");
       socket.off("nouvelle_mission");
+      socket.off("joueur_elimine");
     };
   }, [navigate]);
 
@@ -100,18 +118,46 @@ export default function Jeu() {
     }
   };
 
-  const handleValidationElimination = () => {
-    if (!notification || !infos) return;
+    const handleValidationElimination = () => {
+      console.log("🚨 handleValidationElimination déclenché");
 
-    socket.emit("validation_elimination", {
-      code: infos.code,
-      cible: infos.pseudo,
-      tueur: notification.tueur,
-    });
+      if (!notification || !infos) {
+        console.warn("❌ Données manquantes :", { notification, infos });
+        return;
+      }
 
-    setNotification(null);
-    navigate("/elimine");
-  };
+      const pseudoElimine = infos.pseudo;
+
+      let elimines: { pseudo: string; position: number }[] =
+        JSON.parse(localStorage.getItem("tka_elimines") || "[]");
+
+      // ✅ Supprime toute entrée existante pour ce pseudo
+      if (!elimines.some(j => j.pseudo === pseudoElimine)) {
+        const position = elimines.length + 2;
+        elimines.push({ pseudo: pseudoElimine, position });
+        localStorage.setItem("tka_elimines", JSON.stringify(elimines));
+        console.log("📦 Éliminé enregistré (via validation) :", pseudoElimine, "→", position);
+      }
+
+
+      const position = elimines.length + 2;
+      elimines.push({ pseudo: pseudoElimine, position });
+
+      localStorage.setItem("tka_elimines", JSON.stringify(elimines));
+      console.log("📦 Éliminé enregistré (via validation) :", pseudoElimine, "→", position);
+
+      socket.emit("validation_elimination", {
+        code: infos.code,
+        cible: pseudoElimine,
+        tueur: notification.tueur,
+      });
+
+      setNotification(null);
+      console.log("➡️ Navigation vers /elimine");
+      navigate("/elimine");
+    };
+
+
 
   if (enChargement) {
     return (
