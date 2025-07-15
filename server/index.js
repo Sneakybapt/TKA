@@ -7,52 +7,23 @@ import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import User from "./models/User.js";
 import express from "express";
-import cors from "cors";
-import bcrypt from "bcrypt";
-import Game from "./models/Game.js"; 
+import bodyParser from "body-parser"; // pour parser le JSON du frontend
 
 const app = express();
-
-const whitelist = [
-  "https://the-killer-game-9hvh.onrender.com",
-  "http://localhost:5173"
-];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || whitelist.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("❌ CORS bloqué : " + origin));
-    }
-  },
-  credentials: true
-}));
-
-
-// ✅ Middleware JSON moderne
-app.use(express.json());
-
+app.use(bodyParser.json()); // ou app.use(express.json());
 
 app.post("/api/inscription", async (req, res) => {
   const { pseudo, motdepasse } = req.body;
 
   try {
     const existingUser = await User.findOne({ pseudo });
+
     if (existingUser) {
       return res.status(400).json({ ok: false, message: "Pseudo déjà pris" });
     }
 
-    const hashedPassword = await bcrypt.hash(motdepasse, 10); // ✅ hash sécurisé
-    console.log("🔐 Mot de passe hashé :", hashedPassword);
-    const newUser = new User({ pseudo, motdepasse: hashedPassword });
-    console.log("✅ Utilisateur enregistré :", newUser);
-
-    console.log("📨 Sauvegarde du nouvel utilisateur :", pseudo);
+    const newUser = new User({ pseudo, motdepasse });
     await newUser.save();
-    const userEnBase = await User.findById(newUser._id);
-    console.log("🔍 Vérification post-save :", userEnBase);
-    console.log("✅ Enregistrement terminé");
 
     res.json({ ok: true, message: "Profil créé avec succès" });
   } catch (error) {
@@ -61,89 +32,11 @@ app.post("/api/inscription", async (req, res) => {
   }
 });
 
-app.post("/api/connexion", async (req, res) => {
-  const { pseudo, motdepasse } = req.body;
-
-  try {
-    console.log("🔍 Connexion reçue :", { pseudo, motdepasse });
-
-    const user = await User.findOne({ pseudo });
-    if (!user) {
-      console.log("❌ Profil introuvable");
-      return res.status(404).json({ ok: false, message: "Profil introuvable" });
-    }
-
-    console.log("🔐 Mot de passe en base :", user.motdepasse);
-
-    const match = await bcrypt.compare(motdepasse, user.motdepasse);
-    console.log("✅ Résultat comparaison :", match);
-
-    if (!match) {
-      return res.status(401).json({ ok: false, message: "Mot de passe incorrect" });
-    }
-
-    console.log(`✅ Connexion réussie pour ${pseudo}`);
-    res.json({ ok: true, message: "Connexion réussie" });
-  } catch (error) {
-    console.error("❌ Erreur lors de la connexion :", error);
-    res.status(500).json({ ok: false, message: "Erreur serveur" });
-  }
-});
-
-app.post("/api/enregistrer-partie", async (req, res) => {
-  const { code, classement } = req.body;
-    console.log("📨 Route appelée !");
-    console.log("📦 Données reçues :", req.body);
-    console.log("📨 Données reçues :", { code, classement });
-
-  if (!Array.isArray(classement) || classement.length === 0) {
-    return res.status(400).json({ ok: false, message: "Classement invalide" });
-  }
-
-  try {
-    const nouvellePartie = new Game({
-      code,
-      joueurs: classement.map(joueur => ({
-        pseudo: joueur.pseudo,
-        position: joueur.position
-      }))
-    });
-
-    await nouvellePartie.save();
-    console.log("✅ Partie enregistrée dans Mongo :", nouvellePartie);
-
-    res.json({ ok: true, message: "Partie enregistrée" });
-  } catch (error) {
-    console.error("❌ Erreur enregistrement partie :", error);
-    res.status(500).json({ ok: false, message: "Erreur serveur" });
-  }
-});
-
-
-app.get("/api/profil-stats", async (req, res) => {
-  const pseudo = req.query.pseudo;
-
-  try {
-    const parties = await Game.find({ "joueurs.pseudo": pseudo });
-
-    const nbParties = parties.length;
-    const nbVictoires = parties.filter(p =>
-      p.joueurs.find(j => j.pseudo === pseudo && j.position === 1)
-    ).length;
-
-    res.json({ nbParties, nbVictoires });
-  } catch (error) {
-    console.error("❌ Erreur stats profil :", error);
-    res.status(500).json({ ok: false, message: "Erreur serveur" });
-  }
-});
-
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-const MONGO_URI = "mongodb+srv://baptistegaquiere:ivnyXAeYWdng2HwY@clusterthekiller.vclykcy.mongodb.net/Killergame?retryWrites=true&w=majority&appName=ClusterTheKiller";
+const MONGO_URI = "mongodb+srv://baptistegaquiere:ivnyXAeYWdng2HwY@clusterthekiller.vclykcy.mongodb.net/?retryWrites=true&w=majority&appName=ClusterTheKiller";
 
 
 mongoose.connect(MONGO_URI)
@@ -322,21 +215,11 @@ io.on("connection", (socket) => {
     const tueurData = await redis.get(`partie:${code}:${tueur}`);
     if (!cibleData || !tueurData) return;
 
-    // ✅ Transfert de cible et mission
     tueurData.cible = cibleData.cible;
     tueurData.mission = cibleData.mission || "Mission secrète.";
     await redis.set(`partie:${code}:${tueur}`, tueurData);
-
-    // ✅ Supprime le joueur éliminé
     await redis.del(`partie:${code}:${cible}`);
 
-    // ✅ Stocke l’élimination côté serveur
-    await redis.rpush(`elimines:${code}`, cible);
-
-    // ✅ Notifie tous les joueurs
-    io.to(code).emit("joueur_elimine", cible);
-
-    // ✅ Mise à jour du tueur
     io.to(tueurData.id).emit("partie_lancee", {
       pseudo: tueurData.pseudo,
       cible: tueurData.cible,
@@ -344,33 +227,20 @@ io.on("connection", (socket) => {
       code,
     });
 
-    // ✅ Mise à jour des joueurs restants
     const keys = await redis.keys(`partie:${code}:*`);
     const joueursRestants = await Promise.all(keys.map(k => redis.get(k)));
 
     io.to(code).emit("mise_a_jour_joueurs", joueursRestants);
     console.log(`☠️ ${cible} éliminé par ${tueur}`);
 
-    // ✅ Fin de partie → classement final
     if (joueursRestants.length === 1) {
       const survivant = joueursRestants[0];
-      const elimines = await redis.lrange(`elimines:${code}`, 0, -1);
-
-      const classement = elimines.map((pseudo, index) => ({
-        pseudo,
-        position: elimines.length - index + 1
-      }));
-
-      classement.push({ pseudo: survivant.pseudo, position: 1 });
-
-      io.to(survivant.id).emit("classement_final", classement);
+      io.to(survivant.id).emit("victoire");
       console.log(`🏆 ${survivant.pseudo} a gagné la partie ${code}`);
-      console.log("📦 Classement final :", classement);
     }
 
     delete eliminationsEnAttente[cible];
   });
-
 
   socket.on("demande_survivants", async ({ code }) => {
     const keys = await redis.keys(`partie:${code}:*`);
