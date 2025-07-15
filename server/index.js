@@ -351,23 +351,28 @@ io.on("connection", (socket) => {
     io.to(code).emit("mise_a_jour_joueurs", joueursRestants);
     console.log(`☠️ ${cible} éliminé par ${tueur}`);
 
-    // ✅ Fin de partie → classement final
     if (joueursRestants.length === 1) {
       const survivant = joueursRestants[0];
-      const elimines = await redis.lrange(`elimines:${code}`, 0, -1);
 
+      // ✅ Supprime sa cible pour éviter "lewis doit tuer lewis"
+      survivant.cible = null;
+      survivant.mission = "Tu as survécu à tous les assassins.";
+
+      await redis.set(`partie:${code}:${survivant.pseudo}`, survivant);
+
+      // ✅ Construire le classement
+      const elimines = await redis.lrange(`elimines:${code}`, 0, -1);
       const classement = elimines.map((pseudo, index) => ({
         pseudo,
         position: elimines.length - index + 1
       }));
-
       classement.push({ pseudo: survivant.pseudo, position: 1 });
-      console.log("📡 Envoi classement_final à :", survivant.id);
 
+      // ✅ Émettre le classement final
       io.to(survivant.id).emit("classement_final", classement);
       console.log(`🏆 ${survivant.pseudo} a gagné la partie ${code}`);
-      console.log("📦 Classement final :", classement);
     }
+
 
     delete eliminationsEnAttente[cible];
   });
