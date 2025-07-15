@@ -1,42 +1,47 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
+import socket from "../socket";
 import "../themesombre.css";
 
 export default function Victoire() {
   const navigate = useNavigate();
+  const setClassement = useState<{ pseudo: string; position: number }[]>([])[1];
 
   useEffect(() => {
-    const code = localStorage.getItem("tka_code");
-    const pseudoGagnant = localStorage.getItem("tka_pseudo");
+    const dejaEnregistre = localStorage.getItem("tka_partie_enregistree");
+    if (dejaEnregistre === "true") return;
 
-    // ✅ Récupère les joueurs éliminés avec leur position
-    const joueursElimines = JSON.parse(localStorage.getItem("tka_elimines") || "[]");
-    // Format : [{ pseudo: "lucas", position: 8 }, { pseudo: "mateo", position: 7 }, ...]
+    socket.on("classement_final", (classementRecu) => {
+      console.log("📦 Classement reçu :", classementRecu);
 
-    // ✅ Construit le classement final
-    const classementFinal = [
-      ...joueursElimines,
-      { pseudo: pseudoGagnant, position: 1 } // ✅ le gagnant
-    ];
+      const code = localStorage.getItem("tka_code");
+      localStorage.setItem("tka_partie_enregistree", "true");
 
-    // ✅ Envoie au backend
-    fetch(`${API_BASE_URL}/api/enregistrer-partie`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, classement: classementFinal })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.ok) {
-          console.error("❌ Erreur enregistrement partie :", data.message);
-        } else {
-          console.log("✅ Partie enregistrée :", classementFinal);
-        }
+      setClassement(classementRecu); // ✅ pour affichage si tu veux
+      console.log("📡 Envoi fetch vers /api/enregistrer-partie :", { code, classement: classementRecu });
+
+      fetch(`${API_BASE_URL}/api/enregistrer-partie`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, classement: classementRecu })
       })
-      .catch(err => {
-        console.error("❌ Erreur réseau :", err);
-      });
+        .then(res => res.json())
+        .then(data => {
+          if (!data.ok) {
+            console.error("❌ Erreur enregistrement partie :", data.message);
+          } else {
+            console.log("✅ Partie enregistrée :", classementRecu);
+          }
+        })
+        .catch(err => {
+          console.error("❌ Erreur réseau :", err);
+        });
+    });
+
+    return () => {
+      socket.off("classement_final");
+    };
   }, []);
 
   const handleRetourAccueil = () => {

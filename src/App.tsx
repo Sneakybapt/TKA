@@ -11,10 +11,20 @@ import Inscription from "./pages/Inscription";
 import Connexion from "./pages/Connexion";
 import ProfilBar from "./components/ProfilBar";
 import Profil from "./pages/Profil";
+import { useEffect } from "react";
+import { initSocketListeners } from "./socket";
+
 
 function Accueil() {
   const navigate = useNavigate();
   const pseudo = localStorage.getItem("pseudo");
+
+    // ✅ Stocke tka_pseudo dès l’arrivée sur la page
+  useEffect(() => {
+    if (pseudo) {
+      localStorage.setItem("tka_pseudo", pseudo);
+    }
+  }, [pseudo]);
 
   return (
     <div className="accueil-container">
@@ -64,6 +74,11 @@ function Accueil() {
 }
 
 export default function App() {
+
+    useEffect(() => {
+    initSocketListeners(); // ✅ initialise les sockets globaux une seule fois
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

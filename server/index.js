@@ -13,16 +13,22 @@ import Game from "./models/Game.js";
 
 const app = express();
 
-// ✅ Détection dynamique de l’environnement
-const FRONTEND_URL = process.env.NODE_ENV === "production"
-  ? "https://the-killer-game-9hvh.onrender.com" // 🔁 ton frontend Render
-  : "http://localhost:5173";
+const whitelist = [
+  "https://the-killer-game-9hvh.onrender.com",
+  "http://localhost:5173"
+];
 
-// ✅ Middleware CORS
 app.use(cors({
-  origin: FRONTEND_URL,
+  origin: (origin, callback) => {
+    if (!origin || whitelist.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("❌ CORS bloqué : " + origin));
+    }
+  },
   credentials: true
 }));
+
 
 // ✅ Middleware JSON moderne
 app.use(express.json());
@@ -86,6 +92,9 @@ app.post("/api/connexion", async (req, res) => {
 
 app.post("/api/enregistrer-partie", async (req, res) => {
   const { code, classement } = req.body;
+    console.log("📨 Route appelée !");
+    console.log("📦 Données reçues :", req.body);
+    console.log("📨 Données reçues :", { code, classement });
 
   if (!Array.isArray(classement) || classement.length === 0) {
     return res.status(400).json({ ok: false, message: "Classement invalide" });
@@ -101,6 +110,8 @@ app.post("/api/enregistrer-partie", async (req, res) => {
     });
 
     await nouvellePartie.save();
+    console.log("✅ Partie enregistrée dans Mongo :", nouvellePartie);
+
     res.json({ ok: true, message: "Partie enregistrée" });
   } catch (error) {
     console.error("❌ Erreur enregistrement partie :", error);
@@ -311,11 +322,21 @@ io.on("connection", (socket) => {
     const tueurData = await redis.get(`partie:${code}:${tueur}`);
     if (!cibleData || !tueurData) return;
 
+    // ✅ Transfert de cible et mission
     tueurData.cible = cibleData.cible;
     tueurData.mission = cibleData.mission || "Mission secrète.";
     await redis.set(`partie:${code}:${tueur}`, tueurData);
+
+    // ✅ Supprime le joueur éliminé
     await redis.del(`partie:${code}:${cible}`);
 
+    // ✅ Stocke l’élimination côté serveur
+    await redis.rpush(`elimines:${code}`, cible);
+
+    // ✅ Notifie tous les joueurs
+    io.to(code).emit("joueur_elimine", cible);
+
+    // ✅ Mise à jour du tueur
     io.to(tueurData.id).emit("partie_lancee", {
       pseudo: tueurData.pseudo,
       cible: tueurData.cible,
@@ -323,20 +344,33 @@ io.on("connection", (socket) => {
       code,
     });
 
+    // ✅ Mise à jour des joueurs restants
     const keys = await redis.keys(`partie:${code}:*`);
     const joueursRestants = await Promise.all(keys.map(k => redis.get(k)));
 
     io.to(code).emit("mise_a_jour_joueurs", joueursRestants);
     console.log(`☠️ ${cible} éliminé par ${tueur}`);
 
+    // ✅ Fin de partie → classement final
     if (joueursRestants.length === 1) {
       const survivant = joueursRestants[0];
-      io.to(survivant.id).emit("victoire");
+      const elimines = await redis.lrange(`elimines:${code}`, 0, -1);
+
+      const classement = elimines.map((pseudo, index) => ({
+        pseudo,
+        position: elimines.length - index + 1
+      }));
+
+      classement.push({ pseudo: survivant.pseudo, position: 1 });
+
+      io.to(survivant.id).emit("classement_final", classement);
       console.log(`🏆 ${survivant.pseudo} a gagné la partie ${code}`);
+      console.log("📦 Classement final :", classement);
     }
 
     delete eliminationsEnAttente[cible];
   });
+
 
   socket.on("demande_survivants", async ({ code }) => {
     const keys = await redis.keys(`partie:${code}:*`);
@@ -376,22 +410,6 @@ io.on("connection", (socket) => {
     io.to(joueur.id).emit("nouvelle_mission", { mission: nouvelleMission });
     console.log(`🔁 Nouvelle mission envoyée à ${pseudo}`);
   });
-
-    socket.on("joueur_elimine", (pseudoElimine) => {
-    // ✅ Récupère la liste actuelle
-    const elimines = JSON.parse(localStorage.getItem("tka_elimines") || "[]");
-
-    // ✅ Calcule la position d’élimination
-    const position = elimines.length + 2; // +1 pour index, +1 car le gagnant sera position 1
-
-    // ✅ Ajoute le joueur avec sa position
-    elimines.push({ pseudo: pseudoElimine, position });
-
-    // ✅ Sauvegarde dans localStorage
-    localStorage.setItem("tka_elimines", JSON.stringify(elimines));
-    console.log("📦 Éliminé :", pseudoElimine, "→ position", position);
-  });
-
 
   socket.on("disconnect", async () => {
     const keys = await redis.keys("partie:*:*");
