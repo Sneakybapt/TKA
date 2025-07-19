@@ -317,59 +317,70 @@ io.on("connection", (socket) => {
   });
 
 
-  socket.on("validation_elimination", async ({ code, cible, tueur }) => {
-    const cibleData = await redis.get(`partie:${code}:${cible}`);
-    const tueurData = await redis.get(`partie:${code}:${tueur}`);
-    if (!cibleData || !tueurData) return;
+socket.on("validation_elimination", async ({ code, cible, tueur }) => {
+  const cibleData = await redis.get(`partie:${code}:${cible}`);
+  const tueurData = await redis.get(`partie:${code}:${tueur}`);
+  if (!cibleData || !tueurData) return;
 
-    // ✅ Transfert de cible et mission
-    tueurData.cible = cibleData.cible;
-    tueurData.mission = cibleData.mission || "Mission secrète.";
-    await redis.set(`partie:${code}:${tueur}`, tueurData);
+  // ✅ Transfert de cible et mission
+  tueurData.cible = cibleData.cible;
+  tueurData.mission = cibleData.mission || "Mission secrète.";
+  await redis.set(`partie:${code}:${tueur}`, tueurData);
 
-    // ✅ Supprime le joueur éliminé
-    await redis.del(`partie:${code}:${cible}`);
+  // ✅ Supprime le joueur éliminé
+  await redis.del(`partie:${code}:${cible}`);
 
-    // ✅ Stocke l’élimination côté serveur
-    await redis.rpush(`elimines:${code}`, cible);
+  // ✅ Stocke l’élimination côté serveur
+  await redis.rpush(`elimines:${code}`, cible);
 
-    // ✅ Notifie tous les joueurs
-    io.to(code).emit("joueur_elimine", cible);
+  // ✅ Notifie tous les joueurs
+  io.to(code).emit("joueur_elimine", cible);
 
-    // ✅ Mise à jour du tueur
+  // ✅ Mise à jour des joueurs restants
+  const keys = await redis.keys(`partie:${code}:*`);
+  const joueursRestants = await Promise.all(keys.map(k => redis.get(k)));
+
+  io.to(code).emit("mise_a_jour_joueurs", joueursRestants);
+  console.log(`☠️ ${cible} éliminé par ${tueur}`);
+
+  if (joueursRestants.length > 1) {
+    // ✅ Partie continue → nouvelle mission pour le tueur
     io.to(tueurData.id).emit("partie_lancee", {
       pseudo: tueurData.pseudo,
       cible: tueurData.cible,
       mission: tueurData.mission,
       code,
     });
+  }
 
-    // ✅ Mise à jour des joueurs restants
-    const keys = await redis.keys(`partie:${code}:*`);
-    const joueursRestants = await Promise.all(keys.map(k => redis.get(k)));
+  if (joueursRestants.length === 1) {
+    const survivant = joueursRestants[0];
 
-    io.to(code).emit("mise_a_jour_joueurs", joueursRestants);
-    console.log(`☠️ ${cible} éliminé par ${tueur}`);
+    // ✅ Suppression de la cible du survivant
+    survivant.cible = null;
+    survivant.mission = null;
+    await redis.set(`partie:${code}:${survivant.pseudo}`, survivant);
 
-    // ✅ Fin de partie → classement final
-    if (joueursRestants.length === 1) {
-      const survivant = joueursRestants[0];
-      const elimines = await redis.lrange(`elimines:${code}`, 0, -1);
+    // ✅ Socket victoire pour redirection
+    io.to(survivant.id).emit("victoire");
+    console.log(`🏆 ${survivant.pseudo} est le dernier survivant → redirection vers Victoire`);
 
-      const classement = elimines.map((pseudo, index) => ({
-        pseudo,
-        position: elimines.length - index + 1
-      }));
+    // ✅ Classement final
+    const elimines = await redis.lrange(`elimines:${code}`, 0, -1);
+    const classement = elimines.map((pseudo, index) => ({
+      pseudo,
+      position: elimines.length - index + 1
+    }));
 
-      classement.push({ pseudo: survivant.pseudo, position: 1 });
+    classement.push({ pseudo: survivant.pseudo, position: 1 });
 
-      io.to(survivant.id).emit("classement_final", classement);
-      console.log(`🏆 ${survivant.pseudo} a gagné la partie ${code}`);
-      console.log("📦 Classement final :", classement);
-    }
+    io.to(survivant.id).emit("classement_final", classement);
+    console.log("📦 Classement final :", classement);
+  }
 
-    delete eliminationsEnAttente[cible];
-  });
+  delete eliminationsEnAttente[cible];
+});
+
 
 
   socket.on("demande_survivants", async ({ code }) => {
