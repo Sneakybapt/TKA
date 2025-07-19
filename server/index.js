@@ -411,28 +411,46 @@ io.on("connection", (socket) => {
     console.log(`🔁 Nouvelle mission envoyée à ${pseudo}`);
   });
 
-  socket.on("disconnect", async () => {
-    const keys = await redis.keys("partie:*:*");
+    socket.on("disconnect", async () => {
+      const keys = await redis.keys("partie:*:*");
 
-    for (const key of keys) {
-      const joueur = await redis.get(key);
-      if (!joueur) continue;
+      for (const key of keys) {
+        const joueur = await redis.get(key);
+        if (!joueur) continue;
 
-      if (joueur.id === socket.id) {
-        console.log(`⚠️ Déconnexion de ${joueur.pseudo} (${joueur.code})`);
+        if (joueur.id === socket.id) {
+          console.log(`⚠️ Déconnexion de ${joueur.pseudo} (${joueur.code})`);
 
-        // ✅ Mise en veille sans suppression
-        joueur.id = null;
-        await redis.set(key, joueur);
+          // ✅ Mise en veille sans suppression
+          joueur.id = null;
+          await redis.set(key, joueur);
 
-        const restants = await Promise.all(
-          (await redis.keys(`partie:${joueur.code}:*`)).map(k => redis.get(k))
-        );
+          const restants = await Promise.all(
+            (await redis.keys(`partie:${joueur.code}:*`)).map(k => redis.get(k))
+          );
 
-        io.to(joueur.code).emit("mise_a_jour_joueurs", restants);
+          io.to(joueur.code).emit("mise_a_jour_joueurs", restants);
+
+          // 👉 Vérifie s'il ne reste qu'un joueur actif
+          const joueursActifs = restants.filter(j => j.id !== null);
+          if (joueursActifs.length === 1) {
+            const survivant = joueursActifs[0];
+            const elimines = await redis.lrange(`elimines:${joueur.code}`, 0, -1);
+
+            const classement = elimines.map((pseudo, index) => ({
+              pseudo,
+              position: elimines.length - index + 1
+            }));
+
+            classement.push({ pseudo: survivant.pseudo, position: 1 });
+
+            io.to(survivant.id).emit("classement_final", classement);
+            console.log(`🏆 ${survivant.pseudo} a gagné la partie ${joueur.code} (déconnexion)`);
+            console.log("📦 Classement final :", classement);
+          }
+        }
       }
-    }
-  });
+    });
 
 });
 
