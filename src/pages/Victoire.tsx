@@ -79,11 +79,14 @@ export default function Victoire() {
         <div className="classement-final">
           <h2>📊 Classement final</h2>
           <ul>
-            {classement.map(({ pseudo, position }: { pseudo: string; position: number }) => (
-              <li key={pseudo}>
-                {position === 1 ? "🥇" : `#${position}`} {pseudo}
-              </li>
+            {[...classement]
+              .sort((a, b) => a.position - b.position)
+              .map(({ pseudo, position }: { pseudo: string; position: number }) => (
+                <li key={pseudo}>
+                  {position === 1 ? "🥇" : `#${position}`} {pseudo}
+                </li>
             ))}
+
           </ul>
         </div>
       )}
