@@ -46,7 +46,7 @@ export default function CreerPartie() {
 
   return (
     <div className="creer-container">
-      <h2 className="creer-title">🛠️ Créer une partie</h2>
+      <h2 className="creer-title">Créer une partie</h2>
       <form className="creer-form" onSubmit={handleSubmit}>
         <input
           type="text"

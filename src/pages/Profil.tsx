@@ -31,10 +31,10 @@ export default function Profil() {
 
   return (
     <div className="creer-container">
-      <h2 className="creer-title">👤 Fiche de {pseudo}</h2>
+      <h2 className="creer-title">Profil de {pseudo}</h2>
       <p>🎮 Parties jouées : {stats.nbParties}</p>
       <p>🏆 Parties gagnées : {stats.nbVictoires}</p>
-      <p>📊 Place moyenne (hors élimination) : {stats.moyennePlace}</p>
+      <p>📊 Place moyenne : {stats.moyennePlace}</p>
     </div>
   );
 }

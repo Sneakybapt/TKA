@@ -131,6 +131,15 @@ app.get("/api/profil-stats", async (req, res) => {
       p.joueurs.find(j => j.pseudo === pseudo && j.position === 1)
     ).length;
 
+    const positions = parties.map(p =>
+      p.joueurs.find(j => j.pseudo === pseudo)?.position
+    ).filter(pos => pos !== undefined);
+
+    const moyenne = positions.length > 0
+      ? (positions.reduce((acc, val) => acc + val, 0) / positions.length).toFixed(2)
+      : null;
+
+    console.log("🧠 Stats calculées :", { nbParties, nbVictoires, moyennePlace: moyenne });
     res.json({ nbParties, nbVictoires, moyennePlace: moyenne });
   } catch (error) {
     console.error("❌ Erreur stats profil :", error);
