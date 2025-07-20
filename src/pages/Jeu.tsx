@@ -42,6 +42,22 @@ export default function Jeu() {
     };
 
     socket.on("reconnexion_ok", handleReception);
+
+    socket.emit("verif_mission_validee", {
+      pseudo: localStorage.getItem("tka_pseudo"),
+      code: localStorage.getItem("tka_code")
+    });
+
+    socket.on("mission_validee_recue", ({ verrou }) => {
+      if (verrou) {
+        console.log("🔒 Mission verrouillée par le backend");
+        setMissionValidee(true);
+      }
+    });
+
+
+
+
     socket.on("partie_lancee", handleReception);
 
     socket.on("demande_validation", ({ tueur, message }) => {
@@ -61,9 +77,6 @@ export default function Jeu() {
       localStorage.setItem("tka_elimines", JSON.stringify(elimines));
       console.log("📦 Éliminé enregistré :", pseudoElimine, "→", position);
     });
-
-
-
 
     socket.on("victoire", () => {
       navigate("/victoire");
@@ -87,6 +100,7 @@ export default function Jeu() {
       socket.off("erreur");
       socket.off("nouvelle_mission");
       socket.off("joueur_elimine");
+      socket.off("mission_validee_recue");
     };
   }, [navigate]);
 
@@ -205,6 +219,7 @@ export default function Jeu() {
           </button>
         </div>
       )}
+
 
 
       <div style={{ height: "1.5rem" }} />
