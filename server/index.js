@@ -131,7 +131,7 @@ app.get("/api/profil-stats", async (req, res) => {
       p.joueurs.find(j => j.pseudo === pseudo && j.position === 1)
     ).length;
 
-    res.json({ nbParties, nbVictoires });
+    res.json({ nbParties, nbVictoires, moyennePlace: moyenne });
   } catch (error) {
     console.error("❌ Erreur stats profil :", error);
     res.status(500).json({ ok: false, message: "Erreur serveur" });
